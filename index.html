@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#3b2414">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -150,6 +150,8 @@ button.b,.tab{font-size:23px;font-weight:400;letter-spacing:.3px}
 #toast{font-size:21px;font-weight:400}
 .chip.gold{gap:6px;padding:0 12px}
 .chip.gold svg{width:20px;height:20px}
+/* iOS zoomt bei Eingabefeldern unter 16 px */
+input,select,textarea{font-size:16px!important}
 </style>
 </head>
 <body>
