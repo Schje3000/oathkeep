@@ -12,9 +12,9 @@
 <link rel="apple-touch-icon" href="assets/icon-180.png">
 <link rel="icon" type="image/png" href="assets/icon-192.png">
 <title>Oathkeep</title>
-<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f1512;--panel:#18211c;--panel2:#212d26;--line:rgba(255,255,255,.09);--text:#f1f4ea;--mut:#9aa694;--gold:#e8c860;--green:#a9c957;--red:#ef8a6f;--px:'Pixelify Sans',ui-monospace,monospace}
+:root{--bg:#0f1512;--panel:#18211c;--panel2:#212d26;--line:rgba(255,255,255,.09);--text:#f1f4ea;--mut:#9aa694;--gold:#e8c860;--green:#a9c957;--red:#ef8a6f;--px:'VT323',ui-monospace,monospace}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased}
 #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
@@ -139,6 +139,15 @@ canvas.pv{border:3px solid var(--w4);border-radius:12px;box-shadow:0 3px 0 var(-
 ul.tlog li{display:flex;align-items:center;gap:10px;padding:4px 0}
 .b.sm{min-height:44px;padding:0 12px;font-size:13px;flex:none}
 .b.warnb{color:#ffd9c8}
+/* Pixelschrift VT323: nur eine Strichstärke, wirkt kleiner als Pixelify Sans */
+header h1,.logo{font-size:32px;font-weight:400;letter-spacing:.5px}
+.t{font-size:25px;font-weight:400;letter-spacing:.3px;line-height:1.05}
+button.b,.tab{font-size:23px;font-weight:400;letter-spacing:.3px}
+.b.sm{font-size:19px}
+.tile b{font-size:17px;font-weight:400}
+.chip{font-size:21px;font-weight:400}
+.pill{font-size:17px;font-weight:400}
+#toast{font-size:21px;font-weight:400}
 </style>
 </head>
 <body>

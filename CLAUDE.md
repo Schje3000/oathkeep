@@ -33,7 +33,7 @@ Oathkeep ist ein privates Handy-Spiel von Jeremie. Es verwandelt seine Alltagsro
 
 | Datei oder Link | Inhalt |
 | --- | --- |
-| `index.html` | Die komplette App (HTML, CSS, JavaScript in einer Datei, rund 90 KB). Einzige externe Abhängigkeit: Schrift «Pixelify Sans» von Google Fonts. |
+| `index.html` | Die komplette App (HTML, CSS, JavaScript in einer Datei, rund 90 KB). Einzige externe Abhängigkeit: Schrift «VT323» von Google Fonts. |
 | `CLAUDE.md` | Diese Übergabe. |
 | App auf claude.ai | https://claude.ai/artifact/8j2noP6KZNuU5AytKtN7yN (Stand von `index.html`, wird von hier aus nicht mehr aktualisiert) |
 | Spielkonzept | https://claude.ai/artifact/GdkUbdjrxj6V41rWGGai6m |
@@ -135,7 +135,7 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 
 - Szenen: detaillierte Pixel-Art-Fantasy, sonniger Sommerwald, Burg aus Stein, ruhig und einladend, nicht düster. Referenzen: Ritter auf Waldlichtung mit Lichtstrahl, Reiter im Tannenwald, Burgturm mit Tor, überwachsene Ruinenhalle.
 - Oberfläche: dunkles Holz mit hellerem Holzrahmen, grüne glänzende Hauptknöpfe, Holzknöpfe für Nebenaktionen, segmentierte grüne Balken in Holzfassung. Vorlage war ein Cartoon-Holz-UI-Kit, aber mit dunklerem Holz.
-- Schrift: «Pixelify Sans» für Titel, Knöpfe und Zahlen. Systemschrift für Erklärtexte.
+- Schrift: «VT323» (Google Fonts) für Titel, Knöpfe und Zahlen. Systemschrift für Erklärtexte.
 - Farben (CSS-Variablen): Holz `--w1` #3b2414, `--w2` #4d2f1a, `--w3` #6e4526, `--w4` #9a6638, Schatten `--wd` #1e1108, Grün `--g1` #9be06a, `--g2` #62b440, `--g3` #3c7f2a, Text #f6ead0, Gold #f0cf6a.
 - Touch-Ziele mindestens 44 Pixel. Echte `button`-Elemente.
 
