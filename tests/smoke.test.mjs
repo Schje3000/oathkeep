@@ -47,3 +47,23 @@ describe('Vorlagen', () => {
     expect(OK.migrate('Unsinn', NOW).gold).toBe(25);
   });
 });
+
+describe('Regeln aus main', () => {
+  it('Steinausbau braucht Burgstufe 4', () => {
+    const S = OK.preset('leer', NOW);
+    S.up.thron = 2; S.gold = 9999; S.xp.aus = 100000; // genug Stufe und Gold
+    expect(OK.upNext(S, 'thron').bq).toBe(4);
+    expect(OK.upOk(S, 'thron')).toBe(false);
+    S.wall.lvl = 4;
+    expect(OK.upOk(S, 'thron')).toBe(true);
+  });
+  it('Putzaufgaben zählen für Haushalt-Boni', () => {
+    expect(OK.goldCat('kueche')).toBe('home');
+    expect(OK.goldCat('book')).toBe('read');
+  });
+  it('Einrichtung gibt Boni', () => {
+    const S = OK.preset('leer', NOW);
+    S.inv = ['ritterstatue'];
+    expect(OK.eqBonus(S, 'def')).toBe(2);
+  });
+});

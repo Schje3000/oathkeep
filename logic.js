@@ -42,9 +42,9 @@ var ITEMS=OK.ITEMS={
  orkbanner:{n:'Orkbanner',sl:'trophae',r:1,b:{def:2},img:'orkbanner'},pokal:{n:'Goldpokal',sl:'trophae',r:1,b:{def:2},img:'pokal'},
  drachenschild:{n:'Drachenschild',sl:'trophae',r:1,b:{def:2},img:'trophae'},drachenschaedel:{n:'Drachenschädel',sl:'trophae',r:2,b:{def:3},img:'drachenschaedel'},
  kristallkrone:{n:'Kristallkrone',sl:'trophae',r:2,b:{def:3},img:'kristallkrone'},
- baerenfell:{n:'Bärenfell',sl:'moebel',r:0,b:{},img:'baerenfell',room:'halle'},exoten:{n:'Exotische Pflanze',sl:'moebel',r:0,b:{},img:'exoten',room:'garten'},
- schatztruhe:{n:'Schatztruhe',sl:'moebel',r:1,b:{},img:'schatztruhe',room:'thron'},ritterstatue:{n:'Ritterstatue',sl:'moebel',r:1,b:{},img:'ritterstatue',room:'thron'},
- kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{},img:'kristallleuchte',room:'turm'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{},img:'loewenstatue',room:'hof'}};
+ baerenfell:{n:'Bärenfell',sl:'moebel',r:0,b:{gold_home:0.05},img:'baerenfell',room:'halle'},exoten:{n:'Exotische Pflanze',sl:'moebel',r:0,b:{gold_water:0.05},img:'exoten',room:'garten'},
+ schatztruhe:{n:'Schatztruhe',sl:'moebel',r:1,b:{gold:0.03},img:'schatztruhe',room:'thron'},ritterstatue:{n:'Ritterstatue',sl:'moebel',r:1,b:{def:2},img:'ritterstatue',room:'thron'},
+ kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{gold_piano:0.05},img:'kristallleuchte',room:'turm'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{gold:0.05},img:'loewenstatue',room:'hof'}};
 var RAR=OK.RAR=['gewöhnlich','selten','episch'];
 
 /* ---------- Spielstand ---------- */
@@ -100,10 +100,12 @@ OK.todayXp=function(S,s,now){var k=dkey(now);return S.log.reduce(function(a,e){r
 /* ---------- Gold, Ausrüstung, Tränke ---------- */
 function own(S,id){return S.inv.indexOf(id)>=0;}
 function eqBonus(S,k){var s=0;['waffe','ruestung','talisman'].forEach(function(sl){var id=S.equip[sl];if(id&&ITEMS[id]&&ITEMS[id].b[k])s+=ITEMS[id].b[k];});
- if(k==='def')S.inv.forEach(function(id){var it=ITEMS[id];if(it&&it.sl==='trophae')s+=it.b.def||0;});return s;}
+ S.inv.forEach(function(id){var it=ITEMS[id];if(it&&(it.sl==='trophae'||it.sl==='moebel'))s+=it.b[k]||0;});return s;}
 OK.own=own;OK.eqBonus=eqBonus;
 OK.buffOn=function(S,now){return S.buffUntil>now;};
-OK.goldMul=function(S,k,now){return (OK.buffOn(S,now)?1.5:1)*(1+eqBonus(S,'gold_'+k)+eqBonus(S,'gold'));};
+/* Goldbereich einer Routine für Boni (Putzaufgaben und Wäsche zählen als Haushalt, Buch als Lesen). */
+OK.goldCat=function(k){return {run:'run',gym:'gym',piano:'piano',water:'water',read:'read',book:'read'}[k]||'home';};
+OK.goldMul=function(S,k,now){return (OK.buffOn(S,now)?1.5:1)*(1+eqBonus(S,'gold_'+OK.goldCat(k))+eqBonus(S,'gold'));};
 OK.potPrice=function(S){return Math.max(15,40-3*(lvl(S.xp.kra)-1));};
 OK.buyPotion=function(S){var pp=OK.potPrice(S);if(S.gold>=pp&&S.potions<9){S.gold-=pp;S.potions++;return pp;}return 0;};
 OK.drinkPotion=function(S,now){if(S.potions>0&&!OK.buffOn(S,now)){S.potions--;S.buffUntil=now+DAY;return true;}return false;};
@@ -149,9 +151,10 @@ OK.toggleRest=function(S,now){if(!S.rest){S.rest=now;return true;}var dur=now-S.
 OK.repairWall=function(S){if(S.wall.dmg>0&&S.gold>=15){S.gold-=15;S.wall.dmg--;return true;}return false;};
 OK.upLvl=function(S,r){return r==='burg'?S.wall.lvl-1:(S.up[r]||0);};
 OK.upNext=function(S,r){var i=OK.upLvl(S,r);if(r==='burg')return i>=7?null:{i:i+1,n:CAT.burg[i+1],p:BURG_P[i+1],req:BURG_RC[i+1],sk:null};
- return i>=8?null:{i:i+1,n:CAT[r][i],p:CAT_P[i],req:CAT_SK[r]?CAT_RS[i]:CAT_RC[i],sk:CAT_SK[r]||null};};
+ return i>=8?null:{i:i+1,n:CAT[r][i],p:CAT_P[i],req:CAT_SK[r]?CAT_RS[i]:CAT_RC[i],sk:CAT_SK[r]||null,bq:i+1>=6?7:i+1>=3?4:1};};
 OK.upHave=function(S,n){return n.sk?lvl(S.xp[n.sk]):charLvlOf(S.xp);};
-OK.upOk=function(S,r){var n=OK.upNext(S,r);return !!n&&OK.upHave(S,n)>=n.req&&S.gold>=n.p&&(r!=='burg'||S.wall.dmg===0);};
+/* Raumausbauten 3 bis 5 (Stein) brauchen Burgstufe 4, 6 bis 8 (Prunk) Burgstufe 7 (bq). */
+OK.upOk=function(S,r){var n=OK.upNext(S,r);return !!n&&OK.upHave(S,n)>=n.req&&S.gold>=n.p&&(r!=='burg'||S.wall.dmg===0)&&(!n.bq||S.wall.lvl>=n.bq);};
 /* Kauft den nächsten Ausbau. Ergebnis: der gekaufte Ausbau oder null. */
 OK.upBuy=function(S,r){var n=OK.upNext(S,r);if(!OK.upOk(S,r))return null;S.gold-=n.p;if(r==='burg')S.wall.lvl++;else S.up[r]=(S.up[r]||0)+1;return n;};
 
@@ -208,7 +211,7 @@ OK.preset=function(name,now){var rng=OK.seededRng(7),S,st;
  if(name==='normal'||name==='vernachlaessigt'){
   var end=name==='normal'?now:now-14*DAY;st=dayStart(end)-28*DAY;S=fresh(st);
   simulate(S,st,name==='normal'?28:29,rng);
-  S.wall.lvl=3;S.up={thron:3,halle:2,turm:2,bib:1,garten:2,hof:2};
+  S.wall.lvl=3;S.up={thron:2,halle:2,turm:2,bib:1,garten:2,hof:2};
   if(name==='normal'){OK.logEntry(S,'water',1,now-3600000);OK.resolveRaids(S,now,rng);}
   else OK.resolveRaids(S,now,rng);
   S.lvlSeen=charLvlOf(S.xp);return S;}
