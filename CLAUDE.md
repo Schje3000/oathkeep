@@ -255,7 +255,7 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 - Texte in der App mittelalterlich und knapp halten, passend zu den bestehenden Namen.
 - Grössere Umbauten in kleinen Schritten, mit Git-Commit pro Schritt.
 
-## 11. Stand PixelLab (Prototyp Thronsaal)
+## 11. Stand PixelLab
 
 - Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung und wird vom Proxy eingesetzt. Konto im Trial: nur 1 Auftrag gleichzeitig, Generierungen knapp.
 - Held: Charakter `89a15b04-044d-4997-96c6-8d653debb432` (64 px, 8 Richtungen, Low Top-Down).
@@ -266,3 +266,12 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 - Möbel und Wand: `create_image_pixen`, je 1 Generierung.
 - Im Code: `TH`, `thLoad`, `thStatic`, `thHero`, `thDraw`. Spritesheet `assets/thron/held.png` mit Zellen 92 × 92: Zeile 0 Ruheposen in 8 Richtungen (S, SO, O, NO, N, NW, W, SW), Zeile 1 Laufen Süd, 2 Nord, 3 Ost (West gespiegelt), 4 müde Süd. Müde und geschwächt werden zusätzlich per Code entsättigt.
 - Fehlen die Bilder (etwa als Claude-Artifact), zeichnet die App den alten Thronsaal.
+
+### Übrige Räume (Stand 17. November 2026)
+
+- Innenraum, Zauberturm, Bibliothek, Burggarten und Innenhof sind aus PixelLab-Grafiken in `assets/raum/` zusammengesetzt. Code: `RX`, `RX_ROOMS`, `rxDraw`, `rxOk`. Gemeinsame Teile: Wand und Fackeln aus dem Thronsaal, Böden als Kachelsätze (`holz`, `garten`, `hof`).
+- Zustände per Code statt eigener Bilder: Moder (`rxModer`), Farbvarianten mit `rxTone` (welke Pflanzen, dunkler Kristall, besorgte Bewohner), Abdunklung im Turm.
+- Stufen: Halle mit Teppich, Banner, Fackeln, Rüstung; Turm mit Regal und Teleskop; Bibliothek mit einem Regal je Stufe und Globus; Garten mit mehr Beeten, Vogelscheuche, Bienenkorb; Innenhof mit mehr Bewohnern.
+- Kachelsätze: Die Bezeichnung «upper/lower» ist bei Thron- und Gartenboden vertauscht. Der Holzboden wurde dadurch mit Stein statt Teppich verkettet, verwendet wird nur die reine Holzkachel. Der Teppich `teppich.png` ist offline aus den Thronsaal-Kacheln gebaut.
+- Noch gezeichnet: Aussenansicht der Burg und Weltkarte. Die Held-Vorschau beim Helden zeichnet weiterhin den alten Helden.
+- PixelLab-Guthaben ist aufgebraucht (Trial, 40 Generierungen). `tools/batch.py` erzeugt Bilder aus einer Liste, `tools/tileset.py` lädt Kachelsätze.
