@@ -2,7 +2,15 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b2414">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Oathkeep">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
 <title>Oathkeep</title>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -124,6 +132,10 @@ canvas.pv{border:3px solid var(--w4);border-radius:12px;box-shadow:0 3px 0 var(-
 .tab{flex:1;min-height:48px;font-family:var(--px);font-size:17px;font-weight:700;color:var(--text);border-radius:12px;border:3px solid var(--w3);background:linear-gradient(#7a4e2c,#5a371f);box-shadow:0 4px 0 var(--wd),inset 0 2px 0 rgba(255,255,255,.16);cursor:pointer}
 .tab[aria-pressed="true"]{background:linear-gradient(var(--g1),var(--g2));color:#12340a;box-shadow:0 4px 0 var(--wd),inset 0 0 0 2px var(--g3),inset 0 5px 0 rgba(255,255,255,.38)}
 .pill.bad{background:linear-gradient(#f0a27a,#d9694a);border-color:#8a2e22;color:#3a0f08}
+/* Homescreen-App: Abstand zu Notch und Home-Leiste */
+#hud{padding-top:calc(12px + env(safe-area-inset-top))}
+#float{top:calc(74px + env(safe-area-inset-top))}
+#sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
 </style>
 </head>
 <body>
