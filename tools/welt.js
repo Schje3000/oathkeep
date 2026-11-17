@@ -30,25 +30,15 @@ function wModer(x,FY,H,m){if(!m)return;var R=pen(x),i,X,Y,mc;
  x.save();x.translate(0,FY-104);cobweb(R,0,0,1);if(m>=2)cobweb(R,359,0,-1);x.restore();
  x.fillStyle='rgba(30,40,15,'+(m*0.05)+')';x.fillRect(0,0,360,H);}
 function wTorch(c,cx,cy,t,q){wGlow(c,cx,cy,24+((t+q*3)%6<3?0:3),'rgba(255,190,90,.32)');}
-function own(id){return S.inv.indexOf(id)>=0;}
+function own(id){return OK.own(S,id);}
 
 /* Ausbaukatalog */
-var CAT={
- burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
- thron:['Steinboden, Teppich und Thron','Banner','Fackeln','Säulen','Festtafel','Thronwachen','Wandteppiche und Hofdame','Goldener Thron und Barde'],
- halle:['Küchenschrank','Teppich','Wandbanner','Fackeln','Fässer und Vorräte','Rüstungsständer','Kronleuchter','Hauskatze'],
- turm:['Kerzenleuchter','Kristallkugel','Notenpult','Bücherregal','Sternkarte','Teleskop','Harfe','Zauberspiegel'],
- bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
- garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenteich'],
- hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
-var CAT_SK={halle:'hau',turm:'kla',bib:'wis',garten:'kra'},CAT_P=[30,55,85,125,170,225,290,360],CAT_RS=[2,3,4,5,6,7,8,9],CAT_RC=[2,3,5,7,9,11,13,15],
- BURG_P=[0,100,180,280,400,550,750,1000],BURG_RC=[1,2,4,6,8,10,12,14];
-function upLvl(r){return r==='burg'?S.wall.lvl-1:(S.up[r]||0);}
-function upNext(r){var i=upLvl(r);if(r==='burg')return i>=7?null:{i:i+1,n:CAT.burg[i+1],p:BURG_P[i+1],req:BURG_RC[i+1],sk:null};
- return i>=8?null:{i:i+1,n:CAT[r][i],p:CAT_P[i],req:CAT_SK[r]?CAT_RS[i]:CAT_RC[i],sk:CAT_SK[r]||null,bq:i+1>=6?7:i+1>=3?4:1};}
-function upHave(n){return n.sk?lvl(S.xp[n.sk]):charLvl();}
-function upOk(r){var n=upNext(r);return !!n&&upHave(n)>=n.req&&S.gold>=n.p&&(r!=='burg'||S.wall.dmg===0)&&(!n.bq||S.wall.lvl>=n.bq);}
-function upBuy(r){var n=upNext(r);if(!upOk(r))return;S.gold-=n.p;if(r==='burg')S.wall.lvl++;else S.up[r]=(S.up[r]||0)+1;save();render();toast(n.n+' gebaut: -'+n.p+' Gold');}
+var CAT=OK.CAT,CAT_SK=OK.CAT_SK,CAT_P=OK.CAT_P,CAT_RS=OK.CAT_RS,CAT_RC=OK.CAT_RC,BURG_P=OK.BURG_P,BURG_RC=OK.BURG_RC;
+function upLvl(r){return OK.upLvl(S,r);}
+function upNext(r){return OK.upNext(S,r);}
+function upHave(n){return OK.upHave(S,n);}
+function upOk(r){return OK.upOk(S,r);}
+function upBuy(r){var n=OK.upBuy(S,r);if(!n)return;save();render();toast(n.n+' gebaut: -'+n.p+' Gold');}
 function vBuild(r){var n=upNext(r),i=upLvl(r),max=r==='burg'?7:8,h='<div class="card"><div class="row">'+UI('hammer')+'<div class="grow"><div class="t">'+(r==='burg'?'Burg: '+CAT.burg[i]:'Ausbau '+i+' von 8')+'</div>';
  if(!n)return h+'<div class="s">Vollständig ausgebaut.</div></div></div>'+bar(1,1)+'</div>';
  var have=upHave(n),skOk=have>=n.req,gOk=S.gold>=n.p,dmg=r==='burg'&&S.wall.dmg>0;
@@ -58,38 +48,16 @@ function vBuild(r){var n=upNext(r),i=upLvl(r),max=r==='burg'?7:8,h='<div class="
  return h+'</div>';}
 
 /* Beute */
-var ITEMS={
- kurzschwert:{n:'Kurzschwert',sl:'waffe',r:0,b:{def:2}},langschwert:{n:'Langschwert',sl:'waffe',r:0,b:{def:4}},streitaxt:{n:'Streitaxt',sl:'waffe',r:1,b:{def:6}},
- kriegshammer:{n:'Kriegshammer',sl:'waffe',r:1,b:{def:6,gold_gym:0.1}},runenklinge:{n:'Runenklinge',sl:'waffe',r:2,b:{def:9,gold_run:0.1}},drachentoeter:{n:'Drachentöter',sl:'waffe',r:2,b:{def:13}},
- leder:{n:'Lederrüstung',sl:'ruestung',r:0,b:{def:3},tier:'leder'},kette:{n:'Kettenhemd',sl:'ruestung',r:1,b:{def:6},tier:'kette'},
- platte:{n:'Plattenrüstung',sl:'ruestung',r:1,b:{def:10},tier:'platte'},gold:{n:'Goldrüstung',sl:'ruestung',r:2,b:{def:15,gold:0.05},tier:'gold'},
- klee:{n:'Kleeblatt',sl:'talisman',r:0,b:{gold:0.03}},laeufer:{n:'Läuferamulett',sl:'talisman',r:1,b:{gold_run:0.15}},noten:{n:'Notenbrosche',sl:'talisman',r:1,b:{gold_piano:0.15}},
- besen:{n:'Besenring',sl:'talisman',r:1,b:{gold_home:0.15}},kraeuter:{n:'Kräuteramulett',sl:'talisman',r:1,b:{gold_water:0.2}},lese:{n:'Leserune',sl:'talisman',r:1,b:{gold_read:0.15}},
- drachenauge:{n:'Drachenauge',sl:'talisman',r:2,b:{gold:0.1}},
- wolfsfell:{n:'Wolfsfell',sl:'trophae',r:0,b:{def:1},img:'wolfsfell'},hirschgeweih:{n:'Hirschgeweih',sl:'trophae',r:0,b:{def:1},img:'hirschgeweih'},
- orkbanner:{n:'Orkbanner',sl:'trophae',r:1,b:{def:2},img:'orkbanner'},pokal:{n:'Goldpokal',sl:'trophae',r:1,b:{def:2},img:'pokal'},
- drachenschild:{n:'Drachenschild',sl:'trophae',r:1,b:{def:2},img:'trophae'},drachenschaedel:{n:'Drachenschädel',sl:'trophae',r:2,b:{def:3},img:'drachenschaedel'},
- kristallkrone:{n:'Kristallkrone',sl:'trophae',r:2,b:{def:3},img:'kristallkrone'},
- baerenfell:{n:'Bärenfell',sl:'moebel',r:0,b:{gold_home:0.05},img:'baerenfell',room:'halle'},exoten:{n:'Exotische Pflanze',sl:'moebel',r:0,b:{gold_water:0.05},img:'exoten',room:'garten'},
- schatztruhe:{n:'Schatztruhe',sl:'moebel',r:1,b:{gold:0.03},img:'schatztruhe',room:'thron'},ritterstatue:{n:'Ritterstatue',sl:'moebel',r:1,b:{def:2},img:'ritterstatue',room:'thron'},
- kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{gold_piano:0.05},img:'kristallleuchte',room:'turm'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{gold:0.05},img:'loewenstatue',room:'hof'}};
-var RAR=['gewöhnlich','selten','episch'],RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestung:'Rüstung',talisman:'Talisman',trophae:'Trophäe',moebel:'Einrichtung'},
+var ITEMS=OK.ITEMS;
+var RAR=OK.RAR,RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestung:'Rüstung',talisman:'Talisman',trophae:'Trophäe',moebel:'Einrichtung'},
  ROOMN={halle:'Innenraum',garten:'Burggarten',thron:'Thronsaal',turm:'Zauberturm',hof:'Innenhof'};
 function itemIcon(id){var it=ITEMS[id];return it.img||('i_'+id);}
-function eqBonus(k){var s=0;['waffe','ruestung','talisman'].forEach(function(sl){var id=S.equip[sl];if(id&&ITEMS[id]&&ITEMS[id].b[k])s+=ITEMS[id].b[k];});
- S.inv.forEach(function(id){var it=ITEMS[id];if(it&&(it.sl==='trophae'||it.sl==='moebel'))s+=it.b[k]||0;});return s;}
-function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Piano',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
+function eqBonus(k){return OK.eqBonus(S,k);}
+function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Klang-Magie',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
  for(k in b)o.push(k==='def'?'+'+b[k]+' '+N[k]:'+'+Math.round(b[k]*100)+' % '+N[k]);return o.join(', ')||'Schmuck für '+'den Raum';}
-function lootRoll(src){var got=[],gold=0,pick=function(rar,slots){var c=Object.keys(ITEMS).filter(function(id){return ITEMS[id].r===rar&&!own(id)&&(!slots||slots.indexOf(ITEMS[id].sl)>=0);});
-  if(!c.length){gold+=[20,50,120][rar];return;}var id=c[Math.floor(Math.random()*c.length)];S.inv.push(id);got.push(id);
-  var sl=ITEMS[id].sl;if((sl==='waffe'||sl==='ruestung'||sl==='talisman')&&!S.equip[sl])S.equip[sl]=id;};
- var r=Math.random();
- if(src==='raid'){if(r<0.35)pick(r<0.0175?2:r<0.105?1:0);}
- else{pick(Math.random()<0.4?2:1,['waffe','ruestung','talisman','moebel']);pick(Math.random()<0.3?2:Math.random()<0.6?1:0,['trophae']);}
- S.gold+=gold;var e={t:Date.now(),src:src,items:got,gold:gold};S.loot.push(e);if(S.loot.length>20)S.loot=S.loot.slice(-20);
- return e;}
-function lootText(e){return e.items.map(function(id){return ITEMS[id].n+' ('+RAR[ITEMS[id].r]+')';}).concat(e.gold?[e.gold+' Gold']:[]).join(', ');}
-function heroTier(){var id=S.equip.ruestung;return id&&ITEMS[id]&&ITEMS[id].tier||'tunika';}
+function lootRoll(src){return OK.lootRoll(S,src,now());}
+var lootText=OK.lootText;
+function heroTier(){return OK.heroTier(S);}
 
 /* Held: läuft in allen Räumen */
 /* Held und Bewohner in Seitenansicht. Blatt je Figur: Zeile je Zustand (kräftig, müde, geschwächt; Bewohner nur eine),
@@ -162,9 +130,9 @@ ROOMS2.karte={f:function(){return ['v_welt','mb0','mb1','mb2','mb3','m_lager','m
   S.bosses.slice(0,8).forEach(function(bo,n){var P=M.P[n];if(bo.done&&!bo.won)return;for(k=1;k<16;k++){q=pathPt(k/16,M.C,P);if(k%2)R(q[0],q[1]+oy,2,1,'#5a3d22');}
    wPut(x,bo.done?'m_dorf':'m_fahne',P[0],P[1]+oy+14);});
   wPut(x,'m_lager',M.K[0],M.K[1]+oy+14);wPut(x,'mb'+Math.min(3,Math.floor((S.wall.lvl-1)/2)),M.C[0],M.C[1]+oy+14);},
- dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=Date.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
+ dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=OK.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
   if(f>0.05){var X=p[0],Y=p[1]+oy;wGlow(c,X,Y,10+(t%10<5?0:2),'rgba(168,50,42,.45)');R(X-4,Y-2,3,4,'#a8322a');R(X,Y-3,3,5,'#7a2a1e');R(X+4,Y-2,3,4,'#a8322a');R(X+1,Y-9,1,7,'#2a1c12');R(X+2,Y-9,4,3,'#16141c');}
-  S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(new Date(b.date+'T23:59:59').getTime()-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
+  S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
   }};
 
 function wOk(room){var D=ROOMS2[room];if(!D)return false;var f=D.f();if(D.actors)f=f.concat(D.actors().map(function(n){return 'bew_'+n;}));if(room!=='mauer'&&room!=='karte')f.push('held_s_tunika');return wReady(f);}

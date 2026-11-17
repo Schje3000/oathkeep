@@ -33,7 +33,9 @@ Oathkeep ist ein privates Handy-Spiel von Jeremie. Es verwandelt seine Alltagsro
 
 | Datei oder Link | Inhalt |
 | --- | --- |
-| `index.html` | Die komplette App (HTML, CSS, JavaScript in einer Datei, rund 90 KB). Einzige externe Abhängigkeit: Schrift «VT323» von Google Fonts. |
+| `index.html` | Die App (HTML, CSS, Oberfläche). Einzige externe Abhängigkeit: Schrift «VT323» von Google Fonts. |
+| `logic.js` | Spielregeln als reine Funktionen, zentrale Uhr, Spielstand-Vorlagen. |
+| `debug.js` | Debug-Panel, nur mit `?debug=1`. |
 | `CLAUDE.md` | Diese Übergabe. |
 | App auf claude.ai | https://claude.ai/artifact/8j2noP6KZNuU5AytKtN7yN (Stand von `index.html`, wird von hier aus nicht mehr aktualisiert) |
 | Spielkonzept | https://claude.ai/artifact/GdkUbdjrxj6V41rWGGai6m |
@@ -174,6 +176,15 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 - Räume: `ROOMS.hof`, `.garten`, `.halle`, `.turm`, `.thron`, `.bib`, `.karte` mit je `st` (statisch) und `dy` (animiert). Die Aussenansicht entsteht in `build` und `drawExt`. Der Held entsteht in `heroDraw` aus Pixel-Masken (`HEAD`, `TORSO`), eingefärbt mit den Farben aus `S.look`.
 - Raumstufen: Garten nach Kräuterkunde, Innenraum nach Hauswacht, Zauberturm nach Klang-Magie, Thronsaal nach Charakterstufe, Innenhof nach Mauerstufe, Bibliothek nach Wissen (wächst alle 3 Bücher, max. Stufe 5).
 
+### Spielregeln, Uhr, Debug und Tests
+
+- **Spielregeln** liegen als reine Funktionen in `logic.js` (Objekt `OK`). Jede Funktion bekommt Spielstand und Zeit als Parameter, zum Beispiel `OK.moder(S, now)`, `OK.logEntry(S, art, menge, now)`, `OK.resolveRaids(S, now, rng)`. In `index.html` sind `moder()`, `logAct()` und so weiter nur noch dünne Hüllen darum. Neue Regeln gehören nach `logic.js`, nicht in die Oberfläche.
+- **Uhr:** Die echte Zeit wird nur in `OK.now()` abgefragt. Tests setzen `OK.clock.fixed`, das Debug-Panel `OK.clock.offset`. In `index.html` immer `now()` statt `Date.now()` verwenden.
+- **Debug-Panel:** `index.html?debug=1` lädt `debug.js`. Zeit vorspulen (1 Tag, 1 Woche, bis zum Ansturm), Vorlagen (`OK.preset`: leer, normal, vernachlaessigt, maximal), Zurücksetzen. Der Debug-Modus nutzt einen eigenen Spielstand (`oathkeep_debug`) und synchronisiert nie mit dem Konto. Der echte Spielstand bleibt unberührt.
+- **Testkennungen:** Statische Bereiche haben `data-testid` (`scene`, `hud`, `float`, `sheet`, `toast`). Knöpfe bekommen ihn nach jedem `render()` aus `data-act` (`room:turm` wird `act-room-turm`), Eingabefelder `in-<name>`, Karten `card-<titel>`.
+- **Tests:** `npm install`, dann `npm test` (Vitest, Zeitzone fest Europe/Zurich). Tests liegen in `tests/`.
+- **Test-Agents:** `.claude/agents/oathkeep-logic-tester.md` und `oathkeep-ui-tester.md`, Styleguide `docs/style.md`. Playwright-MCP in `.mcp.json`.
+
 ### Reste, die aufgeräumt werden dürfen
 
 `ui.inv`, `ui.more` und Teile der Inventar-Logik sind aus früheren Versionen übrig und werden nicht mehr angezeigt.
@@ -181,7 +192,7 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 ## 7. Bekannte Schwächen
 
 - Die gezeichnete Grafik ist detailliert, erreicht aber nicht die Dichte der Referenzbilder.
-- Alle Szenen sind von vorne gezeichnet (wie ein Bühnenbild).
+- Die Räume sind in Seitenansicht umgesetzt (Branch `seitenansicht` ist in `main` zusammengeführt). Burg und Weltkarte bleiben schräg von oben.
 - Im Innenhof sind die Bewohner klein. Im Thronsaal ist der Held doppelt skaliert und dadurch gröber als der Raum.
 - Die Weltkarte hat keine Ortsnamen und zeigt höchstens fünf Eroberungen als Festungen.
 - Die Spielwerte (Ruhm, Kosten, Schwellen) sind Annahmen und noch nicht im Alltag erprobt.
@@ -203,6 +214,8 @@ claude mcp add pixellab https://api.pixellab.ai/mcp -t http -H "Authorization: B
 Den Schlüssel trägt Jeremie selbst ein. Nie in Dateien oder ins Repository schreiben. Dokumentation der Werkzeuge: https://api.pixellab.ai/mcp/docs
 
 ### Schritt 1: Umbau auf Low Top-Down, zuerst nur der Thronsaal
+
+**Überholt:** Die Perspektive ist jetzt Seitenansicht (Abschnitt 9). Der folgende Text bleibt nur als Verlauf stehen, die PixelLab-Beschreibungen des Helden sind weiter brauchbar.
 
 Jeremie will die Welt in der Sicht «Low Top-Down» (schräg von oben, wie klassische Aufbauspiele), mit Grafiken aus PixelLab. Bevor alles umgebaut wird, entsteht ein Testraum.
 
@@ -252,6 +265,7 @@ Wenn der Testraum überzeugt: Aussenansicht, Garten (Pflanzen in vier Zuständen
 
 Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 
+- **Perspektive:** entschieden, Seitenansicht (Sidescroller). Szenen als Hochformatbilder von der Seite, Held und Bewohner laufen links und rechts auf der Bodenlinie (`FLOOR`, gemessen mit `tools/boden.py`), Sprites mit `tools/held_seite.py` und `tools/bewohner.py` (PixelLab `view: side`). Burg-Aussenansicht und Weltkarte bleiben von oben. Umgesetzt und in `main`. Massgebend ist `docs/style.md`.
 - **Heldenanpassung:** entschieden. Die frühere Farbwahl ist durch Ausrüstung ersetzt (Rüstung sichtbar am Helden). `S.look` bleibt im Spielstand, wird aber nicht mehr angezeigt.
 - **Tränke:** entschieden, kaufbar und als Beute, wirken 24 Stunden auf Gold.
 - **Spielwerte:** nach ein bis zwei Wochen Alltag anpassen.
@@ -268,9 +282,10 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 ## 11. Stand PixelLab und Grafik
 
 - Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`, Bildserien mit `tools/batch.py <liste.json> <ordner>` (überspringt vorhandene, wartet bei vollen Plätzen), Kachelsätze mit `tools/tileset.py`, Heldenstufen mit `tools/tiers.py`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung. Abo Tier 1: 2000 Generierungen pro Monat, 8 Aufträge gleichzeitig.
+- **Perspektive:** Seitenansicht (siehe Abschnitt 9). Der frühere Zusatz «strict front view ...» für Möbel gilt nur für die alten frontalen Szenen.
 - **Szenen (Seitenansicht):** Jeder Raum ist pro Ausbaustufe ein Hochformatbild `s_<ort><stufe>` (360 × 512) in Seitenansicht wie ein 2D-Seitenscroller: Rückwand frontal, Möbel auf einer Bodenlinie, darunter ein Fundament-Querschnitt. Garten und Innenhof in Nahsicht (Mauer oben angeschnitten), damit der Massstab zum Helden passt. Keine gemalten Leute (Thronsaal ab Stufe 6 ausgenommen). Das Bild wird so verschoben, dass seine Bodenlinie knapp über der Holzleiste liegt (`rBand`, `scPlace`). Burg und Weltkarte bleiben schräg von oben (`v_burg*`, `v_welt`).
 - Held (Seitenansicht): Grundfigur Tunika `a7c5a390-77a1-4d8b-b1da-83f6ef42be01` (88 px, view side), Rüstungsstufen und Zustände als Zustände davon, IDs in `tools/held_seite.py`-Ausgabe. Blätter `assets/held/s_<stufe>.png` (tunika, leder, kette, platte, gold): Zellen 96 × 96, Füsse auf y 90, Zeile je Zustand (kräftig, müde, geschwächt), Spalten Ruhe Süd, Ruhe Ost, 6 × Laufen Ost (Westen gespiegelt). Gebaut mit `tools/blatt.py`. Bewohner `assets/raum/bew_<name>.png` gleich aufgebaut (`tools/bewohner.py`).
-- Grafiken: `assets/raum/` mit Szenen `v_<ort><stufe>` (thron, halle, turm, bib, garten, hof je 0 bis 8; burg 0 bis 7), Weltkarte `v_welt`, Kartensymbole `mb0` bis `mb3`, `m_lager`, `m_fahne`, `m_dorf`, Gegenstände `i_*` und Beutebilder, Oberflächensymbole `u_*`. Heldensprites in `assets/held/`.
-- Stufen 0 bis 2 sind Holz, 3 bis 5 Stein, 6 bis 8 Prunk. Stein-Ausbauten brauchen Burgstufe 4, Prunk-Ausbauten Burgstufe 7 (`bq` in `upNext`).
+- Grafiken: `assets/raum/` mit Raumszenen `s_<ort><stufe>` (thron, halle, turm, bib, garten, hof je 0 bis 8), Burgstufen `v_burg0` bis `v_burg7`, Weltkarte `v_welt`, Kartensymbole `mb0` bis `mb3`, `m_lager`, `m_fahne`, `m_dorf`, Gegenstände `i_*` und Beutebilder, Oberflächensymbole `u_*`. Heldensprites in `assets/held/`.
+- Stufen 0 bis 2 sind Holz, 3 bis 5 Stein, 6 bis 8 Prunk. Stein-Ausbauten brauchen Burgstufe 4, Prunk-Ausbauten Burgstufe 7 (`bq` in `OK.upNext`, `logic.js`).
 - Code: Block zwischen `/* WELT-START */` und `/* WELT-ENDE */` in `index.html`, Quelle `tools/welt.js`. `ROOMS2` je Ort (`rRoom`): Bild plus Zustände als Überlagerung (Moder, Dürre per Umfärben, Turm abgedunkelt, Noten). `FLOOR` hält je Szene die y-Höhe, auf der der Held steht: die Vorderkante des Bodens vor allen Möbeln. Werte sind von Hand mit einem Raster geprüft (Vorschlag: `tools/boden.py`, trifft oft die Fundamentkante, deshalb immer nachsehen). Held und Bewohner laufen nur waagrecht (`actorStep`), nach Tiefe sortiert (`lane`). Bewohner im Innenhof: je eigener Bereich, Anzahl nach Ausbau, bei Unzufriedenheit blass und stehend. Weltkarte: Burg und Lager als Hauptpunkte, acht Plätze für Eroberungen in `WMAP`.
 - Beute-Einrichtung und Trophäen stehen nicht im Bild, sie geben Boni und erscheinen in der Sammlung beim Helden.
