@@ -336,16 +336,17 @@ function sheetStart(RI){var w=S.wall,cost=w.lvl*150,nr=nextRaid(S.lastRaid),lr=n
  return h;}
 
 
+function vHist(kinds){var L=S.log.filter(function(e){return kinds.indexOf(e.k)>=0;}).slice(-6).reverse();
+ return '<div class="card"><div class="t">Zuletzt</div>'+(L.length?'<ul class="log tlog">'+L.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);
+  return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'. '+KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'||e.k==='read'?' '+num(e.a)+' Min.':'')+', +'+e.x+' Ruhm'+(e.g?', +'+e.g+' Gold':'')+'</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>')+'</div>';}
 function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays(),pl=plant(),last=S.log.slice(-6).reverse();
  var C={hof:''},gw=inWeek(['run','gym']).length,tk=ui.ttab==='aus'?'run':'gym';
- var tlog=S.log.filter(function(e){return e.k===tk;}).slice(-5).reverse();
- var tl=tlog.length?'<ul class="log tlog">'+tlog.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'.'+(e.k==='run'?' '+num(e.a)+' km':'')+', +'+e.x+' Ruhm</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>';
  C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
  (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Gym und Boxen. Training diese Woche, Läufe mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
  '<button class="b pri" data-act="log:gym">Kampftraining eintragen</button></div>'
  :'<div class="card"><div class="t">Ausdauertraining</div><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
  '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Lauf eintragen</button></div></div>')+
- '<div class="card"><div class="t">Zuletzt</div>'+tl+'</div>';
+ vHist([tk]);
  C.turm='<div class="card"><div class="t">Klang-Magie</div><div class="s">Diese Woche: '+pd+' von 5 Tagen, je mindestens 15 Minuten</div>'+bar(pd,5)+
  '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="min" value="'+esc(ui.min)+'"></label><div class="grow"></div><button class="b pri" data-act="log:piano">Übung eintragen</button></div></div>';
  C.garten='<div class="card"><div class="row"><div class="grow"><div class="t">Garten bewässern</div><div class="s">Garten: <span class="'+(pl?'warn':'ok')+'">'+['frisch','welk','verdorrt','verrottet'][pl]+'</span>, Ziel 2 bis 3 Mal pro Woche</div></div><button class="b pri" data-act="log:water">Bewässert</button></div></div>';
@@ -361,6 +362,8 @@ function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays()
  var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;C.thron+='<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Ausrüstung und Trophäen</div><div class="s">'+['waffe','ruestung','talisman'].map(function(sl){var id=S.equip[sl];return SLOTN[sl]+': '+(id?ITEMS[id].n:'keine');}).join(', ')+'. '+ntr+(ntr===1?' Trophäe':' Trophäen')+', '+S.inv.length+' Fundstücke.</div></div></div><button class="b" data-act="tab:held">Ausrüstung ansehen</button></div>';
  var bl=Math.max(0,Math.ceil((S.buffUntil-Date.now())/3600000));C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">Ein Trank gibt 24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold, mit mehr Kräuterkunde weniger.</div></div></div>'+
  '<div class="row"><button class="b grow" data-act="potion:buy" '+(S.gold>=potPrice()&&S.potions<9?'':'disabled')+'>Brauen</button><button class="b pri grow" data-act="potion" '+(S.potions>0&&!buffOn()?'':'disabled')+'>'+(buffOn()?'Wirkt noch '+bl+' Std.':'Trinken')+'</button></div></div>';
+ var HK={halle:CHORES.map(function(c){return c.k;}).concat(['waesche']),turm:['piano'],garten:['water'],bib:['read','book']};
+ for(var hk in HK)C[hk]=(C[hk]||'')+vHist(HK[hk]);
  ['thron','halle','turm','bib','garten','hof'].forEach(function(r){C[r]=(C[r]||'')+vBuild(r);});
  return C;}
 
