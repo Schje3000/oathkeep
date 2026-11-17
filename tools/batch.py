@@ -20,7 +20,7 @@ def run(tool, args):
         except SystemExit:
             pass
         out = buf.getvalue()
-        if "job slots" in out or "at a time" in out or "rate limit" in out:
+        if "job slots" in out or "at a time" in out or "rate limit" in out or "429" in out or "concurrent" in out:
             time.sleep(10)
             continue
         return out

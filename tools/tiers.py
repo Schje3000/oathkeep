@@ -16,7 +16,7 @@ def run(tool, args):
         except SystemExit:
             pass
         out = buf.getvalue()
-        if "slot" in out or "at a time" in out or "parallel" in out or "rate limit" in out:
+        if "slot" in out or "at a time" in out or "parallel" in out or "rate limit" in out or "429" in out or "concurrent" in out:
             time.sleep(10); continue
         return out
     return "Zeitüberschreitung"
