@@ -33,7 +33,9 @@ Oathkeep ist ein privates Handy-Spiel von Jeremie. Es verwandelt seine Alltagsro
 
 | Datei oder Link | Inhalt |
 | --- | --- |
-| `index.html` | Die komplette App (HTML, CSS, JavaScript in einer Datei, rund 90 KB). Einzige externe Abhängigkeit: Schrift «VT323» von Google Fonts. |
+| `index.html` | Die App (HTML, CSS, Oberfläche). Einzige externe Abhängigkeit: Schrift «VT323» von Google Fonts. |
+| `logic.js` | Spielregeln als reine Funktionen, zentrale Uhr, Spielstand-Vorlagen. |
+| `debug.js` | Debug-Panel, nur mit `?debug=1`. |
 | `CLAUDE.md` | Diese Übergabe. |
 | App auf claude.ai | https://claude.ai/artifact/8j2noP6KZNuU5AytKtN7yN (Stand von `index.html`, wird von hier aus nicht mehr aktualisiert) |
 | Spielkonzept | https://claude.ai/artifact/GdkUbdjrxj6V41rWGGai6m |
@@ -173,6 +175,15 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 - Szenen: Canvas mit 360 Pixeln logischer Breite, Höhe 440 bis 840 je nach Bildschirm (`fitCv`). Die eigentliche Szene ist 360 mal 280 Pixel, `topOff` verschiebt sie, `extFill` ergänzt Himmel, Boden oder Wände bis zum Rand. Statische Teile werden in einem Zwischenbild gecacht, animierte Teile alle 120 ms neu gezeichnet (`draw`, `tick`).
 - Räume: `ROOMS.hof`, `.garten`, `.halle`, `.turm`, `.thron`, `.bib`, `.karte` mit je `st` (statisch) und `dy` (animiert). Die Aussenansicht entsteht in `build` und `drawExt`. Der Held entsteht in `heroDraw` aus Pixel-Masken (`HEAD`, `TORSO`), eingefärbt mit den Farben aus `S.look`.
 - Raumstufen: Garten nach Kräuterkunde, Innenraum nach Hauswacht, Zauberturm nach Klang-Magie, Thronsaal nach Charakterstufe, Innenhof nach Mauerstufe, Bibliothek nach Wissen (wächst alle 3 Bücher, max. Stufe 5).
+
+### Spielregeln, Uhr, Debug und Tests
+
+- **Spielregeln** liegen als reine Funktionen in `logic.js` (Objekt `OK`). Jede Funktion bekommt Spielstand und Zeit als Parameter, zum Beispiel `OK.moder(S, now)`, `OK.logEntry(S, art, menge, now)`, `OK.resolveRaids(S, now, rng)`. In `index.html` sind `moder()`, `logAct()` und so weiter nur noch dünne Hüllen darum. Neue Regeln gehören nach `logic.js`, nicht in die Oberfläche.
+- **Uhr:** Die echte Zeit wird nur in `OK.now()` abgefragt. Tests setzen `OK.clock.fixed`, das Debug-Panel `OK.clock.offset`. In `index.html` immer `now()` statt `Date.now()` verwenden.
+- **Debug-Panel:** `index.html?debug=1` lädt `debug.js`. Zeit vorspulen (1 Tag, 1 Woche, bis zum Ansturm), Vorlagen (`OK.preset`: leer, normal, vernachlaessigt, maximal), Zurücksetzen. Der Debug-Modus nutzt einen eigenen Spielstand (`oathkeep_debug`) und synchronisiert nie mit dem Konto. Der echte Spielstand bleibt unberührt.
+- **Testkennungen:** Statische Bereiche haben `data-testid` (`scene`, `hud`, `float`, `sheet`, `toast`). Knöpfe bekommen ihn nach jedem `render()` aus `data-act` (`room:turm` wird `act-room-turm`), Eingabefelder `in-<name>`, Karten `card-<titel>`.
+- **Tests:** `npm install`, dann `npm test` (Vitest, Zeitzone fest Europe/Zurich). Tests liegen in `tests/`.
+- **Test-Agents:** `.claude/agents/oathkeep-logic-tester.md` und `oathkeep-ui-tester.md`, Styleguide `docs/style.md`. Playwright-MCP in `.mcp.json`.
 
 ### Reste, die aufgeräumt werden dürfen
 

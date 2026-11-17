@@ -174,20 +174,22 @@ input,select,textarea{font-size:16px!important}
 </head>
 <body>
 <div id="app">
-<canvas id="cv" width="360" height="640" role="img" aria-label="Ansicht deiner Burg"></canvas>
-<div id="hud"></div>
-<div id="float"></div>
-<div id="sheet"></div>
-<div id="toast" role="status"></div>
+<canvas id="cv" data-testid="scene" width="360" height="640" role="img" aria-label="Ansicht deiner Burg"></canvas>
+<div id="hud" data-testid="hud"></div>
+<div id="float" data-testid="float"></div>
+<div id="sheet" data-testid="sheet"></div>
+<div id="toast" data-testid="toast" role="status"></div>
 </div>
+<script src="logic.js?v=1"></script>
 <script>
 'use strict';
-var DAY=86400000;
-var SK={aus:'Ausdauer',sta:'Stärke',kla:'Klang-Magie',hau:'Hauswacht',kra:'Kräuterkunde',wis:'Wissen'};
-var CHORES=[{k:'kueche',n:'Burgküche schrubben',d:7},{k:'bad',n:'Waschraum scheuern',d:7},{k:'saugen',n:'Halle fegen',d:7},{k:'staub',n:'Gemächer entstauben',d:7},{k:'bett',n:'Lager frisch beziehen',d:21}];
-var KIND={run:{s:'aus',n:'Ausdauertraining',area:'run'},gym:{s:'sta',n:'Kampftraining',area:'gym'},piano:{s:'kla',n:'Piano',area:'piano'},water:{s:'kra',n:'Garten bewässern'},waesche:{s:'hau',n:'Gewänder waschen'},read:{s:'wis',n:'Schriften studieren'},book:{s:'wis',n:'Buch vollendet',area:'read'}};
-CHORES.forEach(function(c){KIND[c.k]={s:'hau',n:c.n,area:'home'};});
-var AREA={run:{n:'Ausdauertraining',u:'km'},gym:{n:'Kampftraining',u:'Einheiten'},piano:{n:'Piano',u:'Minuten'},home:{n:'Haushalt',u:'Aufgaben'},read:{n:'Lesen',u:'Bücher'}};
+var DAY=OK.DAY;
+/* Zentrale Uhr: alle Spielregeln fragen die Zeit hier ab. Tests und Debug-Panel verstellen OK.clock. */
+function now(){return OK.now();}
+var SK=OK.SK;
+var CHORES=OK.CHORES;
+var KIND=OK.KIND;
+var AREA=OK.AREA;
 var LOOK={
  skin:[['#f0c9a4'],['#e0b08a'],['#b98058'],['#7a4f32']],
  hair:[['#2a1c12'],['#5b3a22'],['#b8964a'],['#c9552e'],['#d8dde0']],
@@ -197,22 +199,17 @@ var LOOK={
 };
 var LOOKN={skin:'Haut',hair:'Haar',armor:'Rüstung',cape:'Umhang',plume:'Helmbusch'};
 
-function fresh(){var n=Date.now();return{v:1,updatedAt:0,created:n,name:'Held',
- look:{skin:'#e0b08a',hair:'#5b3a22',armor:'#8e9aa0',cape:'none',plume:'none'},
- xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],
- last:{run:n,gym:n,piano:0,water:n,kueche:n,bad:n,saugen:n,staub:n,bett:n,waesche:0,read:0,book:0},
- log:[],runGoal:50,rest:0,lastRaid:n,raids:[],
- bosses:[{id:'gp',name:'Der Aarewyrm',goal:'GP von Bern',area:'run',date:'2027-05-15',target:300,dmg:0,done:false,won:false}]};}
-function migrate(o){var d=fresh();if(!o||typeof o!=='object')return d;
- if(o.gold===undefined){o.gold=Math.round((o.stones||0)*5);o.raidN=(o.raids||[]).length;if(o.buff){o.buffUntil=Date.now()+DAY;o.buff=false;}o.lvlSeen=charLvlOf(o.xp||{});}
- if(!o.up&&o.xp){var ol=function(k){return Math.floor(Math.sqrt((o.xp[k]||0)/30))+1;};o.up={thron:4,halle:Math.min(3,ol('hau')-1),turm:Math.min(3,ol('kla')-1),bib:Math.min(3,Math.floor((o.books||[]).length/3)),garten:Math.min(3,ol('kra')-1),hof:0};}for(var k in d){if(o[k]===undefined)o[k]=d[k];}
- ['look','xp','wall','last','up','equip'].forEach(function(g){for(var k in d[g]){if(o[g][k]===undefined)o[g][k]=d[g][k];}});return o;}
+function fresh(){return OK.fresh(now());}
+function migrate(o){return OK.migrate(o,now());}
 
+/* Debug-Modus (?debug=1): eigener Spielstand, keine Kontosynchronisation, verstellbare Uhr. Der echte Spielstand bleibt unberührt. */
+var DEBUG=/[?&]debug=1(&|$)/.test(location.search),SKEY=DEBUG?'oathkeep_debug':'oathkeep';
+if(DEBUG){try{OK.clock.offset=parseFloat(localStorage.getItem('oathkeep_debug_offset'))||0;}catch(e){}}
 var S=fresh(),ui={tab:'burg',km:'5',min:'15',confirm:'',imp:'',inv:'',mtab:'ansturm',ttab:'kampf',unc:'',room:'mauer',rmin:'20',btitle:''},sync='lokal',docRef=null,saving=false,pending=false,saveTimer=null;
-try{var raw=localStorage.getItem('oathkeep');if(raw)S=migrate(JSON.parse(raw));}catch(e){}
+try{var raw=localStorage.getItem(SKEY);if(raw)S=migrate(JSON.parse(raw));}catch(e){}
 
-function saveLocal(){try{localStorage.setItem('oathkeep',JSON.stringify(S));}catch(e){}}
-function save(){S.updatedAt=Date.now();if(S.log.length>400)S.log=S.log.slice(-400);if(S.raids.length>12)S.raids=S.raids.slice(-12);saveLocal();if(docRef){clearTimeout(saveTimer);saveTimer=setTimeout(push,1200);}}
+function saveLocal(){try{localStorage.setItem(SKEY,JSON.stringify(S));}catch(e){}}
+function save(){S.updatedAt=now();OK.trim(S);saveLocal();if(docRef){clearTimeout(saveTimer);saveTimer=setTimeout(push,1200);}}
 function push(){if(!docRef)return;if(saving){pending=true;return;}saving=true;
  docRef.set({json:JSON.stringify(S),updatedAt:S.updatedAt}).then(function(){sync='konto';},function(){sync='lokal';}).then(function(){saving=false;if(pending){pending=false;push();}});}
 function initSync(){try{if(!window.claude||!window.claude.use)return;
@@ -221,29 +218,24 @@ function initSync(){try{if(!window.claude||!window.claude.use)return;
   if(remote&&remote.updatedAt>S.updatedAt){S=migrate(remote);saveLocal();raids();}else if(S.updatedAt>0){push();}render();})
  .catch(function(){});}catch(e){}}
 
-function eff(){return S.rest||Date.now();}
-function since(ts){return ts?(eff()-ts)/DAY:999;}
-function dkey(t){var d=new Date(t);return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
-function weekStart(t){var d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime();}
-function lvl(x){return Math.floor(Math.sqrt(x/30))+1;}
-function lvlProg(x){var l=lvl(x),a=30*(l-1)*(l-1),b=30*l*l;return{l:l,cur:x-a,need:b-a};}
-function totalXp(xp){var s=0;for(var k in SK)s+=xp[k]||0;return s;}
-function charLvlOf(xp){return Math.floor(Math.sqrt(totalXp(xp)/150))+1;}
+function eff(){return OK.eff(S,now());}
+function since(ts){return OK.since(S,ts,now());}
+var dkey=OK.dkey,weekStart=OK.weekStart,lvl=OK.lvl,lvlProg=OK.lvlProg,totalXp=OK.totalXp,charLvlOf=OK.charLvlOf;
 function charLvl(){return charLvlOf(S.xp);}
-function charProg(){var l=charLvl(),a=150*(l-1)*(l-1),b=150*l*l;return{l:l,cur:totalXp(S.xp)-a,need:b-a};}
-function buffOn(){return S.buffUntil>Date.now();}
-function goldMul(k){return (buffOn()?1.5:1)*(1+(typeof eqBonus==='function'?eqBonus('gold_'+k)+eqBonus('gold'):0));}
-function potPrice(){return Math.max(15,40-3*(lvl(S.xp.kra)-1));}
-function raidAtk(){return Math.min(150,40+2*S.raidN);}
-function moder(){var m=0;CHORES.forEach(function(c){if(since(S.last[c.k])>c.d)m++;});return m;}
-function plant(){var d=since(S.last.water);return d<3.5?0:d<6?1:d<9?2:3;}
-function fit(){var d=Math.min(since(S.last.run),since(S.last.gym));return d<4?0:d<7?1:2;}
-function tower(){var d=since(S.last.piano);return d<1.5?2:d<3.5?1:0;}
-function happy(){return moder()===0&&plant()===0&&S.wall.dmg===0;}
-function inWeek(k){var w=weekStart(Date.now());return S.log.filter(function(e){return e.t>=w&&(k.indexOf(e.k)>=0);});}
-function pianoDays(){var o={};inWeek(['piano']).forEach(function(e){o[dkey(e.t)]=1;});return Object.keys(o).length;}
-function monthKm(){var d=new Date();return S.log.reduce(function(s,e){var x=new Date(e.t);return s+(e.k==='run'&&x.getMonth()===d.getMonth()&&x.getFullYear()===d.getFullYear()?e.a:0);},0);}
-function todayXp(s){var k=dkey(Date.now());return S.log.reduce(function(a,e){return a+(e.s===s&&dkey(e.t)===k?e.x:0);},0);}
+function charProg(){return OK.charProg(S.xp);}
+function buffOn(){return OK.buffOn(S,now());}
+function goldMul(k){return OK.goldMul(S,k,now());}
+function potPrice(){return OK.potPrice(S);}
+function raidAtk(){return OK.raidAtk(S);}
+function moder(){return OK.moder(S,now());}
+function plant(){return OK.plant(S,now());}
+function fit(){return OK.fit(S,now());}
+function tower(){return OK.tower(S,now());}
+function happy(){return OK.happy(S,now());}
+function inWeek(k){return OK.inWeek(S,k,now());}
+function pianoDays(){return OK.pianoDays(S,now());}
+function monthKm(){return OK.monthKm(S,now());}
+function todayXp(s){return OK.todayXp(S,s,now());}
 function num(n){return (Math.round(n*10)/10).toLocaleString('de-CH');}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function bossHasWon(){return S.bosses.some(function(b){return b.done;});}
@@ -253,42 +245,16 @@ function unlockText(o){return o[1]==='boss'?o[2]:o[3];}
 var toastT=null;
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(function(){t.style.display='none';},2600);}
 
-function logAct(k,a){
- if(S.rest){toast('Rast am Lagerfeuer aktiv. Beende sie zuerst.');return;}
- var K=KIND[k],now=Date.now(),td=todayXp(K.s),x=0,st=1;
- if(k==='run'){if(!(a>0)||a>100){toast('Bitte Kilometer eingeben.');return;}x=Math.min(Math.round(a*12),Math.max(0,200-td));st=2;}
- else if(k==='gym'){a=1;x=td>=50?0:50;st=2;}
- else if(k==='piano'){if(!(a>0)||a>600){toast('Bitte Minuten eingeben.');return;}x=Math.min(Math.round(a*2),Math.max(0,80-td));}
- else if(k==='water'){a=1;x=td>=25?0:25;}
- else if(k==='waesche'){a=1;x=Math.min(15,Math.max(0,150-td));}
- else if(k==='read'){if(!(a>0)||a>600){toast('Bitte Minuten eingeben.');return;}x=Math.min(Math.round(a),Math.max(0,60-td));}
- else if(k==='book'){a=1;x=80;st=3;}
- else{a=1;x=Math.min(30,Math.max(0,150-td));st=2;}
- var bf=0,po=0,g=Math.round(x/5*goldMul(k));
- var before=lvl(S.xp[K.s]),hits=[];
- S.xp[K.s]+=x;S.gold+=g;
- if(K.area)S.bosses.forEach(function(b){if(!b.done&&b.area===K.area){b.dmg+=a;hits.push(b.id);}});
- S.log.push({t:now,k:k,a:a,s:K.s,x:x,g:g,st:0,pl:S.last[k],b:hits,bf:bf,po:po});S.last[k]=now;if(k==='book'){S.books.push({t:now,n:String(ui.btitle||'').slice(0,60)});ui.btitle='';}
- save();render();
- var after=lvl(S.xp[K.s]);
- toast(after>before?SK[K.s]+' erreicht Stufe '+after+'!':K.n+': +'+x+' Ruhm, +'+g+' Gold');
-}
-function undoEntry(t){var i,e=null;for(i=S.log.length-1;i>=0;i--){if(S.log[i].t===t){e=S.log[i];break;}}if(!e)return false;
- S.log.splice(i,1);S.xp[e.s]=Math.max(0,S.xp[e.s]-e.x);S.gold=Math.max(0,S.gold-(e.g!==undefined?e.g:(e.st||0)*5));if(e.po)S.potions=Math.max(0,S.potions-1);
- if(S.last[e.k]===e.t){var lt=0;S.log.forEach(function(o){if(o.k===e.k&&o.t>lt)lt=o.t;});S.last[e.k]=lt||e.pl;}
- if(e.k==='book'){for(i=S.books.length-1;i>=0;i--){if(S.books[i].t===e.t){S.books.splice(i,1);break;}}}
- (e.b||[]).forEach(function(id){S.bosses.forEach(function(b){if(b.id===id)b.dmg=Math.max(0,b.dmg-e.a);});});
- save();return true;}
-function undo(){var e=S.log[S.log.length-1];if(!e||dkey(e.t)!==dkey(Date.now())){toast('Nur Einträge von heute lassen sich zurücknehmen.');return;}
- undoEntry(e.t);render();toast('Letzter Eintrag zurückgenommen');}
-function nextRaid(after){var d=new Date(after);d.setHours(20,0,0,0);d.setDate(d.getDate()+((7-d.getDay())%7));if(d.getTime()<=after)d.setDate(d.getDate()+7);return d.getTime();}
-function raids(){if(S.rest)return;var now=Date.now(),nr=nextRaid(S.lastRaid),n=0,msg='';
- while(nr<=now&&n<8){var c=S.log.filter(function(e){return e.t>nr-7*DAY&&e.t<=nr;}).length;
-  var def=S.wall.lvl*10+c*4-moder()*5-S.wall.dmg*5+(typeof eqBonus==='function'?eqBonus('def'):0),atk=raidAtk(),win=def>=atk;S.raidN++;
-  if(win){S.gold+=20;var le=lootRoll('raid');msg='Ansturm abgewehrt: +20 Gold'+(le.items.length||le.gold?', Beute: '+lootText(le):'');}else{S.wall.dmg=Math.min(5,S.wall.dmg+1);msg='Die Horde hat die Mauer beschädigt';}
-  S.raids.push({t:nr,win:win,def:def,atk:atk});S.lastRaid=nr;nr=nextRaid(nr);n++;}
- if(nr<=now)S.lastRaid=now;
- if(n){save();setTimeout(function(){toast(msg);},400);}}
+function logAct(k,a){var r=OK.logEntry(S,k,a,now(),k==='book'?ui.btitle:'');
+ if(!r.ok){toast(r.err==='rest'?'Rast am Lagerfeuer aktiv. Beende sie zuerst.':r.err==='km'?'Bitte Kilometer eingeben.':'Bitte Minuten eingeben.');return;}
+ if(k==='book')ui.btitle='';save();render();var K=KIND[k];
+ toast(r.after>r.before?SK[K.s]+' erreicht Stufe '+r.after+'!':K.n+': +'+r.x+' Ruhm, +'+r.g+' Gold');}
+function undoEntry(t){if(!OK.undoEntry(S,t))return false;save();return true;}
+function undo(){if(!OK.undoLast(S,now())){toast('Nur Einträge von heute lassen sich zurücknehmen.');return;}
+ save();render();toast('Letzter Eintrag zurückgenommen');}
+var nextRaid=OK.nextRaid;
+function raids(){var r=OK.resolveRaids(S,now());if(!r.n)return;var l=r.last,msg=l.win?'Ansturm abgewehrt: +20 Gold'+(l.loot&&(l.loot.items.length||l.loot.gold)?', Beute: '+lootText(l.loot):''):'Die Horde hat die Mauer beschädigt';
+ save();setTimeout(function(){toast(msg);},400);}
 
 function act(a){var p=a.split(':');
  if(p[0]==='tab'){ui.tab=p[1];ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
@@ -298,25 +264,25 @@ function act(a){var p=a.split(':');
  if(p[0]==='more'){ui.more=p[1]==='on'?true:!ui.more;render();return;}
  if(p[0]==='room'){ui.room=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='inv'){ui.inv=ui.inv===p[1]?'':p[1];render();return;}
- if(a==='potion'){if(S.potions>0&&!buffOn()){S.potions--;S.buffUntil=Date.now()+DAY;save();render();toast('Trank getrunken: 24 Stunden lang 50 % mehr Gold');}return;}
- if(a==='potion:buy'){var pp=potPrice();if(S.gold>=pp&&S.potions<9){S.gold-=pp;S.potions++;save();render();toast('Trank gebraut: -'+pp+' Gold');}return;}
+ if(a==='potion'){if(OK.drinkPotion(S,now())){save();render();toast('Trank getrunken: 24 Stunden lang 50 % mehr Gold');}return;}
+ if(a==='potion:buy'){var pp=OK.buyPotion(S);if(pp){save();render();toast('Trank gebraut: -'+pp+' Gold');}return;}
  if(a==='undo'){undo();return;}
  if(p[0]==='build'){upBuy(p[1]);return;}
  if(p[0]==='islot'){ui.islot=ui.islot===p[1]?'':p[1];render();return;}
- if(p[0]==='eq'){if(own(p[2])&&ITEMS[p[2]].sl===p[1]){S.equip[p[1]]=p[2];ui.islot='';save();render();toast(ITEMS[p[2]].n+' angelegt');}return;}
+ if(p[0]==='eq'){if(OK.equip(S,p[1],p[2])){ui.islot='';save();render();toast(ITEMS[p[2]].n+' angelegt');}return;}
  if(p[0]==='uneq'){S.equip[p[1]]='';save();render();return;}
  if(a==='lvlok'){S.lvlSeen=charLvl();save();render();return;}
  if(p[0]==='ttab'){ui.ttab=p[1];ui.unc='';render();return;}
  if(p[0]==='unlog'){var ut=parseInt(p[1],10);if(ui.unc!==p[1]){ui.unc=p[1];render();return;}ui.unc='';if(undoEntry(ut)){render();toast('Eintrag zurückgenommen');}return;}
  if(a==='wall:up'){upBuy('burg');return;}
  if(a==='wall:up:alt'){var c=S.wall.lvl*150;if(S.wall.lvl<5&&S.gold>=c&&S.wall.dmg===0){S.gold-=c;S.wall.lvl++;save();render();toast('Mauer ausgebaut auf Stufe '+S.wall.lvl);}return;}
- if(a==='wall:fix'){if(S.wall.dmg>0&&S.gold>=15){S.gold-=15;S.wall.dmg--;save();render();toast('Mauer repariert');}return;}
- if(a==='rest'){var now=Date.now();if(!S.rest){S.rest=now;toast('Rast am Lagerfeuer: Timer und Ansturm pausieren');}else{var dur=now-S.rest;for(var k in S.last){if(S.last[k])S.last[k]+=dur;}S.lastRaid+=dur;S.rest=0;toast('Rast beendet');}save();render();return;}
+ if(a==='wall:fix'){if(OK.repairWall(S)){save();render();toast('Mauer repariert');}return;}
+ if(a==='rest'){toast(OK.toggleRest(S,now())?'Rast am Lagerfeuer: Timer und Ansturm pausieren':'Rast beendet');save();render();return;}
  if(p[0]==='look'){S.look[p[1]]=p.slice(2).join(':');save();render();return;}
  if(a==='boss:add'){var f=function(id){return document.getElementById(id).value.trim();};var nm=f('bn'),gl=f('bg'),dt=f('bd'),tg=parseFloat(f('bt'));
   if(!nm||!dt||!(tg>0)){toast('Name, Datum und Zielwert ausfüllen.');return;}
-  S.bosses.push({id:'b'+Date.now(),name:nm,goal:gl,area:f('ba'),date:dt,target:tg,dmg:0,done:false,won:false,start:Date.now()});save();render();toast('Eroberung angelegt');return;}
- if(p[0]==='boss'&&p[1]==='hit'){S.bosses.forEach(function(b){if(b.id===p[2]&&!b.done){b.done=true;b.won=b.dmg>=b.target;if(b.won){S.gold+=150;var le=lootRoll('boss');toast(b.name+' ist erobert, ein Dorf entsteht: +150 Gold, Beute: '+lootText(le));}else toast(b.name+' ist gescheitert. Kein Dorf, keine Beute.');}});save();render();return;}
+  OK.addBoss(S,{name:nm,goal:gl,area:f('ba'),date:dt,target:tg},now());save();render();toast('Eroberung angelegt');return;}
+ if(p[0]==='boss'&&p[1]==='hit'){var br=OK.finishBoss(S,p[2],now());if(br)toast(br.won?br.boss.name+' ist erobert, ein Dorf entsteht: +150 Gold, Beute: '+lootText(br.loot):br.boss.name+' ist gescheitert. Kein Dorf, keine Beute.');save();render();return;}
  if(p[0]==='boss'&&p[1]==='del'){if(ui.confirm!==a){ui.confirm=a;render();return;}S.bosses=S.bosses.filter(function(b){return b.id!==p[2];});ui.confirm='';save();render();return;}
  if(a==='copy'){var ta=document.getElementById('exp');try{navigator.clipboard.writeText(ta.value).then(function(){toast('Sicherung kopiert');},function(){ta.select();toast('Text markiert, bitte kopieren');});}catch(e){ta.select();toast('Text markiert, bitte kopieren');}return;}
  if(a==='import'){try{var o=JSON.parse(ui.imp);if(!o||!o.xp||!o.last)throw 0;S=migrate(o);save();render();toast('Sicherung geladen');}catch(e){toast('Die Sicherung ist nicht lesbar.');}return;}
@@ -324,7 +290,7 @@ function act(a){var p=a.split(':');
 }
 
 function bar(cur,max,g){var p=max>0?Math.max(0,Math.min(100,cur/max*100)):0;return '<div class="bar'+(g?' g':'')+'"><i style="width:'+p+'%"></i></div>';}
-function due(c){var d=c.d-since(S.last[c.k]);if(d>=1)return '<span class="s">fällig in '+Math.floor(d)+(Math.floor(d)===1?' Tag':' Tagen')+'</span>';if(d>=0)return '<span class="s" style="color:var(--gold)">heute fällig</span>';return '<span class="s warn">überfällig seit '+Math.ceil(-d)+(Math.ceil(-d)===1?' Tag':' Tagen')+'</span>';}
+function due(c){var d=OK.choreDue(S,c,now());if(d>=1)return '<span class="s">fällig in '+Math.floor(d)+(Math.floor(d)===1?' Tag':' Tagen')+'</span>';if(d>=0)return '<span class="s" style="color:var(--gold)">heute fällig</span>';return '<span class="s warn">überfällig seit '+Math.ceil(-d)+(Math.ceil(-d)===1?' Tag':' Tagen')+'</span>';}
 
 function sheetStart(RI){var w=S.wall,cost=w.lvl*150,nr=nextRaid(S.lastRaid),lr=null,dn=0;
  var h=(w.dmg?'<div class="card"><div class="row">'+UI('schild')+'<div class="grow"><div class="t">Mauerschaden '+w.dmg+'</div><div class="s">Reparatur: 15 Gold pro Schaden. Ausbau erst ohne Schaden.</div></div><button class="b" data-act="wall:fix" '+(S.gold<15?'disabled':'')+'>Reparieren</button></div></div>':'')+vBuild('burg');
@@ -355,14 +321,13 @@ function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays()
  var tro=S.bosses.filter(function(b){return b.done;}),un=0,tot=0,g;
  for(g in LOOK)LOOK[g].forEach(function(o){if(o[1]){tot++;if(unlocked(o))un++;}});
  var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;C.thron+='<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Ausrüstung und Trophäen</div><div class="s">'+['waffe','ruestung','talisman'].map(function(sl){var id=S.equip[sl];return SLOTN[sl]+': '+(id?ITEMS[id].n:'keine');}).join(', ')+'. '+ntr+(ntr===1?' Trophäe':' Trophäen')+', '+S.inv.length+' Fundstücke.</div></div></div><button class="b" data-act="tab:held">Ausrüstung ansehen</button></div>';
- var bl=Math.max(0,Math.ceil((S.buffUntil-Date.now())/3600000));C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">Ein Trank gibt 24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold, mit mehr Kräuterkunde weniger.</div></div></div>'+
+ var bl=Math.max(0,Math.ceil((S.buffUntil-now())/3600000));C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">Ein Trank gibt 24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold, mit mehr Kräuterkunde weniger.</div></div></div>'+
  '<div class="row"><button class="b grow" data-act="potion:buy" '+(S.gold>=potPrice()&&S.potions<9?'':'disabled')+'>Brauen</button><button class="b pri grow" data-act="potion" '+(S.potions>0&&!buffOn()?'':'disabled')+'>'+(buffOn()?'Wirkt noch '+bl+' Std.':'Trinken')+'</button></div></div>';
  ['thron','halle','turm','bib','garten','hof'].forEach(function(r){C[r]=(C[r]||'')+vBuild(r);});
  return C;}
 
-function defNow(){var nr=nextRaid(S.lastRaid),n=S.log.filter(function(e){return e.t>nr-7*DAY&&e.t<=nr;}).length,m=moder();
- var eq=typeof eqBonus==='function'?eqBonus('def'):0;return{nr:nr,n:n,m:m,eq:eq,def:S.wall.lvl*10+n*4-m*5-S.wall.dmg*5+eq,atk:raidAtk()};}
-function vMap(){var today=dkey(Date.now()),now=Date.now(),h='<div class="tabs"><button class="tab" data-act="mtab:ansturm" aria-pressed="'+(ui.mtab==='ansturm')+'">Ansturm</button><button class="tab" data-act="mtab:erob" aria-pressed="'+(ui.mtab==='erob')+'">Eroberungen</button></div>';
+function defNow(){return OK.defNow(S,now());}
+function vMap(){var today=dkey(OK.now()),now=OK.now(),h='<div class="tabs"><button class="tab" data-act="mtab:ansturm" aria-pressed="'+(ui.mtab==='ansturm')+'">Ansturm</button><button class="tab" data-act="mtab:erob" aria-pressed="'+(ui.mtab==='erob')+'">Eroberungen</button></div>';
  if(ui.mtab==='ansturm'){var d=defNow(),dn=Math.max(0,Math.ceil((d.nr-now)/DAY)),lr=S.raids[S.raids.length-1],ok=d.def>=d.atk,need=Math.max(0,Math.ceil((d.atk-d.def)/4));
   h+='<div class="card"><div class="row"><div class="grow"><div class="t">Ansturm der Horde</div><div class="s">'+(S.rest?'Pausiert, solange die Rast läuft.':'Sonntag 20 Uhr, in '+dn+(dn===1?' Tag':' Tagen'))+'</div></div><span class="pill'+(ok?'':' bad')+'">'+(ok?'Bereit':'Nicht bereit')+'</span></div>'+
   '<div class="s">Verteidigung: '+Math.max(0,d.def)+' von '+d.atk+' nötig</div>'+bar(Math.max(0,d.def),d.atk,!ok)+
@@ -375,7 +340,7 @@ function vMap(){var today=dkey(Date.now()),now=Date.now(),h='<div class="tabs"><
   (d.eq?'<div class="row"><div class="grow">Ausrüstung</div><div class="ok">+'+d.eq+'</div></div>':'')+'<div class="s">Jeder Eintrag zählt 4, jede Mauerstufe 10. Die Horde wird jede Woche stärker. Bei einem Sieg gibt es 20 Gold, bei einer Niederlage nimmt die Mauer Schaden.</div>'+
   (lr?'<div class="s">Letzter Ansturm: '+(lr.win?'<span class="ok">abgewehrt</span>':'<span class="warn">Mauer beschädigt</span>')+' (Verteidigung '+lr.def+' gegen '+lr.atk+')</div>':'')+'</div>';
   return h;}
- S.bosses.forEach(function(b){var A=AREA[b.area],st=b.start||S.created,en=new Date(b.date+'T23:59:59').getTime(),dl=Math.ceil((en-now)/DAY),rdy=today>=b.date,pr=Math.min(1,b.dmg/b.target),tf=en>st?Math.max(0,Math.min(1,(now-st)/(en-st))):1;
+ S.bosses.forEach(function(b){var A=AREA[b.area],st=b.start||S.created,en=OK.dateEnd(b.date),dl=Math.ceil((en-now)/DAY),rdy=today>=b.date,pr=Math.min(1,b.dmg/b.target),tf=en>st?Math.max(0,Math.min(1,(now-st)/(en-st))):1;
   h+='<div class="card gold"><div class="row"><div class="grow"><div class="t">'+esc(b.name)+'</div><div class="s">'+esc(b.goal||A.n)+', bis '+esc(b.date.split('-').reverse().join('.'))+'</div></div>'+(b.done?'<span class="pill'+(b.won?'':' bad')+'">'+(b.won?'Erobert':'Gescheitert')+'</span>':'')+'</div>';
   if(b.done){h+='<div class="s">Abgeschlossen mit '+num(b.dmg)+' von '+num(b.target)+' '+A.u+'.</div>'+bar(b.dmg,b.target);}
   else{h+='<div class="s">Fortschritt: '+num(b.dmg)+' von '+num(b.target)+' '+A.u+'</div>'+bar(b.dmg,b.target)+
@@ -426,8 +391,8 @@ function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRo
  var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
  var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
  if(home){hud='<span class="logo">Oathkeep</span><span class="grow"></span>'+(S.rest?'<span class="chip">Rast</span>':'')+gc+hero;
-  var act=S.bosses.filter(function(b){return !b.done;}).sort(function(a,b){return a.date<b.date?-1:1;})[0],dl=act?Math.ceil((new Date(act.date+'T23:59:59').getTime()-Date.now())/DAY):0;
-  var dn=Math.max(0,Math.ceil((nextRaid(S.lastRaid)-Date.now())/DAY));
+  var act=S.bosses.filter(function(b){return !b.done;}).sort(function(a,b){return a.date<b.date?-1:1;})[0],dl=act?Math.ceil((OK.dateEnd(act.date)-now())/DAY):0;
+  var dn=Math.max(0,Math.ceil((nextRaid(S.lastRaid)-now())/DAY));
   fl='<button class="chip ev'+(act&&dl<=1?' hot':'')+'" data-act="tab:boss">'+UI('karte')+'<span><b>Weltkarte</b><small>'+(S.rest?'Rast am Lagerfeuer':'Ansturm in '+dn+(dn===1?' Tag':' Tagen'))+'</small></span></button>';
   sh=sheetStart(RI);}
  else if(inRoom){hud=back+'<span class="chip">'+cur.n+'<span class="pill">'+upLvl(ui.room)+'/8</span></span>';
@@ -437,7 +402,11 @@ function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRo
   sh='<div class="card lvl">'+UI('held')+'<div class="t big">Stufe '+cl+' erreicht!</div><div class="s">Dein Ruhm wächst. Die Horde wird stärker, aber deine Burg auch.</div>'+(nw.length?'<div class="s">Jetzt baubar: '+nw.join(', ')+'</div>':'')+'<button class="b pri" data-act="lvlok">Weiter</button></div>'+sh;}
  document.getElementById('hud').innerHTML=hud;document.getElementById('float').innerHTML=fl;
  var se=document.getElementById('sheet');se.innerHTML=sh;se.className=home?'':(inRoom||ui.tab==='boss')?'room':'full';
- fitCv();draw();drawPv();}
+ testIds();fitCv();draw();drawPv();}
+/* data-testid für Tests: aus data-act (z. B. room:turm wird act-room-turm), Eingabefelder aus data-in oder id. */
+function testIds(){var a=document.querySelectorAll('#app [data-act]:not([data-testid])'),i,e;for(i=0;i<a.length;i++)a[i].setAttribute('data-testid','act-'+a[i].getAttribute('data-act').replace(/[^a-zA-Z0-9]+/g,'-'));
+ a=document.querySelectorAll('#app input:not([data-testid]),#app select:not([data-testid]),#app textarea:not([data-testid])');for(i=0;i<a.length;i++){e=a[i];var k=e.getAttribute('data-in')||e.id||(e.hasAttribute('data-name')?'name':e.hasAttribute('data-goal')?'goal':e.getAttribute('data-boss')?'boss-'+e.getAttribute('data-boss'):'');if(k)e.setAttribute('data-testid','in-'+k);}
+ a=document.querySelectorAll('#sheet .card .t');for(i=0;i<a.length;i++){e=a[i].closest('.card');if(e&&!e.hasAttribute('data-testid'))e.setAttribute('data-testid','card-'+a[i].textContent.toLowerCase().replace(/[^a-zäöü]+/g,'-').replace(/^-|-$/g,'').slice(0,30));}}
 
 /* ---------- Burgszene ---------- */
 var tick=0,bgA=null,bgB=null,bgSig='',shc={};
@@ -764,10 +733,10 @@ ROOMS.karte=function(){var bs=S.bosses.slice(0,5),C=[120,168],K=[286,66];return{
  [[276,62],[288,56],[298,66]].forEach(function(q){for(k=0;k<8;k++)R(q[0]-k,q[1]+k,k*2+1,1,k%3===0?'#7a2a1e':'#a8322a');R(q[0],q[1]+4,1,4,'#2a1c12');R(q[0]-8,q[1]+8,17,1,'#5a3d22');});
  R(306,46,1,16,'#5a3d22');R(307,46,8,6,'#16141c');R(309,48,2,2,'#EDF0D8');R(312,48,2,2,'#EDF0D8');
  R(40,250,1,22,'#5a3d22');R(29,261,23,1,'#5a3d22');R(38,248,5,2,'#a8322a');R(39,246,3,2,'#a8322a');for(k=0;k<5;k++){R(34+k,255+k,1,1,'#5a3d22');R(46-k,255+k,1,1,'#5a3d22');}
-},dy:function(R,c,t){var i,now=Date.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,K,C);
+},dy:function(R,c,t){var i,now=OK.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,K,C);
  for(i=0;i<8;i++){var yy=120+Math.round(Math.sin(t/3+i/2)*1);R(120+i,138+Math.round(Math.sin(t/3+i/2)*1),1,5,'#3c8a34');}
  disc(R,p[0],p[1],7+(t%10<5?0:2),'rgba(168,50,42,.20)');R(p[0]-4,p[1]-2,3,4,'#a8322a');R(p[0],p[1]-3,3,5,'#7a2a1e');R(p[0]+4,p[1]-2,3,4,'#a8322a');R(p[0]+1,p[1]-9,1,7,'#2a1c12');R(p[0]+2,p[1]-9,4,3,'#16141c');
- bs.forEach(function(b,n){if(b.done)return;var P=BPOS[n],dl=(new Date(b.date+'T23:59:59').getTime()-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)disc(R,P[0],P[1]-2,12,'rgba(232,200,96,.22)');});
+ bs.forEach(function(b,n){if(b.done)return;var P=BPOS[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)disc(R,P[0],P[1]-2,12,'rgba(232,200,96,.22)');});
  for(i=0;i<5;i++){var wy=(i*61+t)%280;R(336+Math.sin(wy/23)*10+i*3,wy,4,1,'#dcebe2');}}};};
 var rc={sig:'',cv:null},extC=null,extSig='';
 /* WELT-START */
@@ -803,25 +772,15 @@ function wModer(x,FY,H,m){if(!m)return;var R=pen(x),i,X,Y,mc;
  x.save();x.translate(0,FY-104);cobweb(R,0,0,1);if(m>=2)cobweb(R,359,0,-1);x.restore();
  x.fillStyle='rgba(30,40,15,'+(m*0.05)+')';x.fillRect(0,0,360,H);}
 function wTorch(c,cx,cy,t,q){wGlow(c,cx,cy,24+((t+q*3)%6<3?0:3),'rgba(255,190,90,.32)');}
-function own(id){return S.inv.indexOf(id)>=0;}
+function own(id){return OK.own(S,id);}
 
 /* Ausbaukatalog */
-var CAT={
- burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
- thron:['Steinboden, Teppich und Thron','Banner','Fackeln','Säulen','Festtafel','Thronwachen','Wandteppiche und Hofdame','Goldener Thron und Barde'],
- halle:['Küchenschrank','Teppich','Wandbanner','Fackeln','Fässer und Vorräte','Rüstungsständer','Kronleuchter','Hauskatze'],
- turm:['Kerzenleuchter','Kristallkugel','Notenpult','Bücherregal','Sternkarte','Teleskop','Harfe','Zauberspiegel'],
- bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
- garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenteich'],
- hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
-var CAT_SK={halle:'hau',turm:'kla',bib:'wis',garten:'kra'},CAT_P=[30,55,85,125,170,225,290,360],CAT_RS=[2,3,4,5,6,7,8,9],CAT_RC=[2,3,5,7,9,11,13,15],
- BURG_P=[0,100,180,280,400,550,750,1000],BURG_RC=[1,2,4,6,8,10,12,14];
-function upLvl(r){return r==='burg'?S.wall.lvl-1:(S.up[r]||0);}
-function upNext(r){var i=upLvl(r);if(r==='burg')return i>=7?null:{i:i+1,n:CAT.burg[i+1],p:BURG_P[i+1],req:BURG_RC[i+1],sk:null};
- return i>=8?null:{i:i+1,n:CAT[r][i],p:CAT_P[i],req:CAT_SK[r]?CAT_RS[i]:CAT_RC[i],sk:CAT_SK[r]||null};}
-function upHave(n){return n.sk?lvl(S.xp[n.sk]):charLvl();}
-function upOk(r){var n=upNext(r);return !!n&&upHave(n)>=n.req&&S.gold>=n.p&&(r!=='burg'||S.wall.dmg===0);}
-function upBuy(r){var n=upNext(r);if(!upOk(r))return;S.gold-=n.p;if(r==='burg')S.wall.lvl++;else S.up[r]=(S.up[r]||0)+1;save();render();toast(n.n+' gebaut: -'+n.p+' Gold');}
+var CAT=OK.CAT,CAT_SK=OK.CAT_SK,CAT_P=OK.CAT_P,CAT_RS=OK.CAT_RS,CAT_RC=OK.CAT_RC,BURG_P=OK.BURG_P,BURG_RC=OK.BURG_RC;
+function upLvl(r){return OK.upLvl(S,r);}
+function upNext(r){return OK.upNext(S,r);}
+function upHave(n){return OK.upHave(S,n);}
+function upOk(r){return OK.upOk(S,r);}
+function upBuy(r){var n=OK.upBuy(S,r);if(!n)return;save();render();toast(n.n+' gebaut: -'+n.p+' Gold');}
 function vBuild(r){var n=upNext(r),i=upLvl(r),max=r==='burg'?7:8,h='<div class="card"><div class="row">'+UI('hammer')+'<div class="grow"><div class="t">'+(r==='burg'?'Burg: '+CAT.burg[i]:'Ausbau '+i+' von 8')+'</div>';
  if(!n)return h+'<div class="s">Vollständig ausgebaut.</div></div></div>'+bar(1,1)+'</div>';
  var have=upHave(n),skOk=have>=n.req,gOk=S.gold>=n.p,dmg=r==='burg'&&S.wall.dmg>0;
@@ -831,38 +790,16 @@ function vBuild(r){var n=upNext(r),i=upLvl(r),max=r==='burg'?7:8,h='<div class="
  return h+'</div>';}
 
 /* Beute */
-var ITEMS={
- kurzschwert:{n:'Kurzschwert',sl:'waffe',r:0,b:{def:2}},langschwert:{n:'Langschwert',sl:'waffe',r:0,b:{def:4}},streitaxt:{n:'Streitaxt',sl:'waffe',r:1,b:{def:6}},
- kriegshammer:{n:'Kriegshammer',sl:'waffe',r:1,b:{def:6,gold_gym:0.1}},runenklinge:{n:'Runenklinge',sl:'waffe',r:2,b:{def:9,gold_run:0.1}},drachentoeter:{n:'Drachentöter',sl:'waffe',r:2,b:{def:13}},
- leder:{n:'Lederrüstung',sl:'ruestung',r:0,b:{def:3},tier:'leder'},kette:{n:'Kettenhemd',sl:'ruestung',r:1,b:{def:6},tier:'kette'},
- platte:{n:'Plattenrüstung',sl:'ruestung',r:1,b:{def:10},tier:'platte'},gold:{n:'Goldrüstung',sl:'ruestung',r:2,b:{def:15,gold:0.05},tier:'gold'},
- klee:{n:'Kleeblatt',sl:'talisman',r:0,b:{gold:0.03}},laeufer:{n:'Läuferamulett',sl:'talisman',r:1,b:{gold_run:0.15}},noten:{n:'Notenbrosche',sl:'talisman',r:1,b:{gold_piano:0.15}},
- besen:{n:'Besenring',sl:'talisman',r:1,b:{gold_home:0.15}},kraeuter:{n:'Kräuteramulett',sl:'talisman',r:1,b:{gold_water:0.2}},lese:{n:'Leserune',sl:'talisman',r:1,b:{gold_read:0.15}},
- drachenauge:{n:'Drachenauge',sl:'talisman',r:2,b:{gold:0.1}},
- wolfsfell:{n:'Wolfsfell',sl:'trophae',r:0,b:{def:1},img:'wolfsfell'},hirschgeweih:{n:'Hirschgeweih',sl:'trophae',r:0,b:{def:1},img:'hirschgeweih'},
- orkbanner:{n:'Orkbanner',sl:'trophae',r:1,b:{def:2},img:'orkbanner'},pokal:{n:'Goldpokal',sl:'trophae',r:1,b:{def:2},img:'pokal'},
- drachenschild:{n:'Drachenschild',sl:'trophae',r:1,b:{def:2},img:'trophae'},drachenschaedel:{n:'Drachenschädel',sl:'trophae',r:2,b:{def:3},img:'drachenschaedel'},
- kristallkrone:{n:'Kristallkrone',sl:'trophae',r:2,b:{def:3},img:'kristallkrone'},
- baerenfell:{n:'Bärenfell',sl:'moebel',r:0,b:{},img:'baerenfell',room:'halle'},exoten:{n:'Exotische Pflanze',sl:'moebel',r:0,b:{},img:'exoten',room:'garten'},
- schatztruhe:{n:'Schatztruhe',sl:'moebel',r:1,b:{},img:'schatztruhe',room:'thron'},ritterstatue:{n:'Ritterstatue',sl:'moebel',r:1,b:{},img:'ritterstatue',room:'thron'},
- kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{},img:'kristallleuchte',room:'turm'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{},img:'loewenstatue',room:'hof'}};
-var RAR=['gewöhnlich','selten','episch'],RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestung:'Rüstung',talisman:'Talisman',trophae:'Trophäe',moebel:'Einrichtung'},
+var ITEMS=OK.ITEMS;
+var RAR=OK.RAR,RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestung:'Rüstung',talisman:'Talisman',trophae:'Trophäe',moebel:'Einrichtung'},
  ROOMN={halle:'Innenraum',garten:'Burggarten',thron:'Thronsaal',turm:'Zauberturm',hof:'Innenhof'};
 function itemIcon(id){var it=ITEMS[id];return it.img||('i_'+id);}
-function eqBonus(k){var s=0;['waffe','ruestung','talisman'].forEach(function(sl){var id=S.equip[sl];if(id&&ITEMS[id]&&ITEMS[id].b[k])s+=ITEMS[id].b[k];});
- if(k==='def')S.inv.forEach(function(id){var it=ITEMS[id];if(it&&it.sl==='trophae')s+=it.b.def||0;});return s;}
+function eqBonus(k){return OK.eqBonus(S,k);}
 function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Piano',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
  for(k in b)o.push(k==='def'?'+'+b[k]+' '+N[k]:'+'+Math.round(b[k]*100)+' % '+N[k]);return o.join(', ')||'Schmuck für '+'den Raum';}
-function lootRoll(src){var got=[],gold=0,pick=function(rar,slots){var c=Object.keys(ITEMS).filter(function(id){return ITEMS[id].r===rar&&!own(id)&&(!slots||slots.indexOf(ITEMS[id].sl)>=0);});
-  if(!c.length){gold+=[20,50,120][rar];return;}var id=c[Math.floor(Math.random()*c.length)];S.inv.push(id);got.push(id);
-  var sl=ITEMS[id].sl;if((sl==='waffe'||sl==='ruestung'||sl==='talisman')&&!S.equip[sl])S.equip[sl]=id;};
- var r=Math.random();
- if(src==='raid'){if(r<0.35)pick(r<0.0175?2:r<0.105?1:0);}
- else{pick(Math.random()<0.4?2:1,['waffe','ruestung','talisman','moebel']);pick(Math.random()<0.3?2:Math.random()<0.6?1:0,['trophae']);}
- S.gold+=gold;var e={t:Date.now(),src:src,items:got,gold:gold};S.loot.push(e);if(S.loot.length>20)S.loot=S.loot.slice(-20);
- return e;}
-function lootText(e){return e.items.map(function(id){return ITEMS[id].n+' ('+RAR[ITEMS[id].r]+')';}).concat(e.gold?[e.gold+' Gold']:[]).join(', ');}
-function heroTier(){var id=S.equip.ruestung;return id&&ITEMS[id]&&ITEMS[id].tier||'tunika';}
+function lootRoll(src){return OK.lootRoll(S,src,now());}
+var lootText=OK.lootText;
+function heroTier(){return OK.heroTier(S);}
 
 /* Held: läuft in allen Räumen */
 function heroSheet(){var t=heroTier(),im=wImg('held_'+t);if(W.bad['held_'+t]||!im.naturalWidth)im=wImg('held_platte');return im;}
@@ -989,9 +926,9 @@ ROOMS2.karte={f:function(){return ['karte4','mb0','mb1','mb2','mb3','m_lager','m
   S.bosses.slice(0,8).forEach(function(bo,n){var P=M.P[n];if(bo.done&&!bo.won)return;for(k=1;k<16;k++){q=pathPt(k/16,M.C,P);if(k%2)R(q[0],q[1]+oy,2,1,'#5a3d22');}
    wPut(x,bo.done?'m_dorf':'m_fahne',P[0],P[1]+oy+14);});
   wPut(x,'m_lager',M.K[0],M.K[1]+oy+14);wPut(x,'mb'+Math.min(3,Math.floor((S.wall.lvl-1)/2)),M.C[0],M.C[1]+oy+14);},
- dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=Date.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
+ dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=OK.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
   if(f>0.05){var X=p[0],Y=p[1]+oy;wGlow(c,X,Y,10+(t%10<5?0:2),'rgba(168,50,42,.45)');R(X-4,Y-2,3,4,'#a8322a');R(X,Y-3,3,5,'#7a2a1e');R(X+4,Y-2,3,4,'#a8322a');R(X+1,Y-9,1,7,'#2a1c12');R(X+2,Y-9,4,3,'#16141c');}
-  S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(new Date(b.date+'T23:59:59').getTime()-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
+  S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
   for(i=0;i<5;i++){var wy=(i*97+t)%480;R(336+Math.sin(wy/23)*8+i*3,wy+oy,4,1,'#dcebe2');}}};
 
 function wOk(room){var D=ROOMS2[room];return !!D&&wReady(D.f());}
@@ -1065,7 +1002,7 @@ function init(){
  for(var rk in ROOMS2)ROOMS2[rk].f().forEach(wImg);for(var ik in ITEMS)wImg(itemIcon(ik));['held_tunika','held_leder','held_kette','held_platte','held_gold'].forEach(wImg);raids();render();
  setInterval(function(){tick++;draw();if(ui.tab==='held')drawPv();},120);window.addEventListener('resize',function(){fitCv();draw();});
  setInterval(function(){var before=S.raids.length;raids();if(S.raids.length!==before)render();},60000);
- initSync();
+ if(DEBUG){var ds=document.createElement('script');ds.src='debug.js?v=1';document.body.appendChild(ds);}else initSync();
 }
 init();
 </script>
