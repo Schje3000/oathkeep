@@ -12,11 +12,14 @@ Spielzeit 3 bis 5 Minuten pro Tag. Nur ein Spieler.
 
 - Pixel-Art im Fantasy-Stil: Ritter, Burgen, Ruinen, sonniger grüner Wald.
   Ruhig und einladend, nicht düster.
-- Perspektive: Räume und Möbel in strenger Frontalansicht, Kamera leicht von
-  oben, symmetrisch, nicht isometrisch (wie ein Bühnenbild). Böden als
-  Kachelsatz in Draufsicht. Der Held ist ein Sprite in Low Top-Down mit 8
-  Richtungen und läuft durch alle Räume. Die Weltkarte ist eine Pergamentkarte
-  von oben.
+- Perspektive: Seitenansicht (Sidescroller). Jeder Ort ist pro Ausbaustufe ein
+  Hochformatbild (360 × 512) von der Seite, mit einer klaren waagrechten
+  Bodenlinie knapp über der Holzleiste. Oben nur Decke oder Himmel.
+- Held und Bewohner sind Sprites in Seitenansicht. Sie laufen nur nach links
+  und rechts auf der Bodenlinie, Westen ist gespiegelter Osten. In Ruhe
+  schauen sie zum Betrachter oder zur Seite. Figuren und Möbel haben den
+  gleichen Massstab.
+- Die Weltkarte ist die einzige Ausnahme: eine Pergamentkarte von oben.
 - Grafiken aus PixelLab, detailliert gepixelt (Held und Burg).
 - Pixel immer scharf skaliert, nie verwischt (`image-rendering: pixelated`).
 - Jeder Bereich hat ein eigenes animiertes Bild mit sichtbarer Stufe.

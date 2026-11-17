@@ -192,7 +192,7 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 ## 7. Bekannte Schwächen
 
 - Die gezeichnete Grafik ist detailliert, erreicht aber nicht die Dichte der Referenzbilder.
-- Alle Szenen sind von vorne gezeichnet (wie ein Bühnenbild).
+- Die Szenen sind noch frontal gezeichnet. Der Umbau auf Seitenansicht läuft im Branch `seitenansicht` (siehe Abschnitt 9).
 - Im Innenhof sind die Bewohner klein. Im Thronsaal ist der Held doppelt skaliert und dadurch gröber als der Raum.
 - Die Weltkarte hat keine Ortsnamen und zeigt höchstens fünf Eroberungen als Festungen.
 - Die Spielwerte (Ruhm, Kosten, Schwellen) sind Annahmen und noch nicht im Alltag erprobt.
@@ -214,6 +214,8 @@ claude mcp add pixellab https://api.pixellab.ai/mcp -t http -H "Authorization: B
 Den Schlüssel trägt Jeremie selbst ein. Nie in Dateien oder ins Repository schreiben. Dokumentation der Werkzeuge: https://api.pixellab.ai/mcp/docs
 
 ### Schritt 1: Umbau auf Low Top-Down, zuerst nur der Thronsaal
+
+**Überholt:** Die Perspektive ist jetzt Seitenansicht (Abschnitt 9). Der folgende Text bleibt nur als Verlauf stehen, die PixelLab-Beschreibungen des Helden sind weiter brauchbar.
 
 Jeremie will die Welt in der Sicht «Low Top-Down» (schräg von oben, wie klassische Aufbauspiele), mit Grafiken aus PixelLab. Bevor alles umgebaut wird, entsteht ein Testraum.
 
@@ -263,6 +265,7 @@ Wenn der Testraum überzeugt: Aussenansicht, Garten (Pflanzen in vier Zuständen
 
 Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 
+- **Perspektive:** entschieden, Seitenansicht (Sidescroller). Szenen als Hochformatbilder von der Seite, Held und Bewohner laufen links und rechts auf der Bodenlinie (`FLOOR`, gemessen mit `tools/boden.py`), Sprites mit `tools/held_seite.py` und `tools/bewohner.py` (PixelLab `view: side`). Nur die Weltkarte bleibt von oben. Umbau im Branch `seitenansicht`. Massgebend ist `docs/style.md`.
 - **Heldenanpassung:** entschieden. Die frühere Farbwahl ist durch Ausrüstung ersetzt (Rüstung sichtbar am Helden). `S.look` bleibt im Spielstand, wird aber nicht mehr angezeigt.
 - **Tränke:** entschieden, kaufbar und als Beute, wirken 24 Stunden auf Gold.
 - **Spielwerte:** nach ein bis zwei Wochen Alltag anpassen.
@@ -279,7 +282,7 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 ## 11. Stand PixelLab und Grafik
 
 - Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`, Bildserien mit `tools/batch.py <liste.json> <ordner>` (überspringt vorhandene, wartet bei vollen Plätzen), Kachelsätze mit `tools/tileset.py`, Heldenstufen mit `tools/tiers.py`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung. Abo Tier 1: 2000 Generierungen pro Monat, 8 Aufträge gleichzeitig.
-- **Perspektive:** Möbel immer mit dem Zusatz «strict front view ... symmetrical, camera looks slightly down, not isometric» erzeugen (siehe `tools/batch.py`-Listen). Ohne ihn zeichnet PixelLab schräg.
+- **Perspektive:** Seitenansicht (siehe Abschnitt 9). Der frühere Zusatz «strict front view ...» für Möbel gilt nur für die alten frontalen Szenen.
 - Held: Grundfigur `89a15b04-044d-4997-96c6-8d653debb432` mit Zuständen je Rüstungsstufe (Tunika, Leder, Kette, Platte = Grundfigur, Gold), je kräftig, müde, geschwächt mit Laufen v3 nach Süd, Nord, Ost. IDs in `tools/tiers_out.json`. Spritesheets `assets/held/<stufe>.png`: Zellen 92 × 92, 12 Zeilen (je Zustand: Ruhepose 8 Richtungen, Laufen Süd, Nord, Ost).
 - Grafiken: `assets/raum/` (Räume, Burgstufen `stufe0` bis `stufe7`, Karte `karte4`, Kartensymbole `mb0` bis `mb3`, `m_lager`, `m_fahne`, `m_dorf`, Gegenstände `i_*`, Oberflächensymbole `u_*`).
 - Kachelsätze (32 px, Wang, Tabelle `TH_WANG`): `stein` (Stein und Teppich, vertauscht), `holz`, `garten` (vertauscht), `hof`, `lehm`, `marmor`.

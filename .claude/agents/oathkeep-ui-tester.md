@@ -34,10 +34,12 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
 ### Pixel-Art
 - Grafiken scharf, kein Verwischen beim Skalieren (image-rendering: pixelated)
 - Einheitliche Pixelgrösse innerhalb einer Szene, keine gemischten Auflösungen
-- Perspektive gemäss docs/style.md einheitlich: Räume und Möbel streng frontal
-  (Kamera leicht von oben, symmetrisch, nicht isometrisch), Böden in Draufsicht,
-  der Held einheitlich als Low-Top-Down-Sprite. Schräg oder isometrisch
-  gezeichnete Möbel sind ein Befund.
+- Perspektive gemäss docs/style.md: alle Räume und die Aussenansicht in
+  Seitenansicht (Sidescroller), nur die Weltkarte von oben. Frontal, von oben
+  oder isometrisch gezeichnete Szenen sind ein Befund.
+- Held und Bewohner stehen genau auf der Bodenlinie (nicht schwebend, nicht
+  im Boden versunken), laufen nur waagrecht, Blickrichtung passt zur
+  Laufrichtung, Massstab passt zu den Möbeln.
 - Dynamische Zustände sichtbar und verständlich (verrottete Pflanzen,
   beschädigte Mauer, schwacher Held, Moder, glückliche Bewohner)
 
