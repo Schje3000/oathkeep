@@ -888,9 +888,9 @@ var ROOMS2={
 thron:{fy:150,f:function(){return ['lehm','stein','marmor','holzwand','wand','prunkwand','einfachthron','thron','goldthron','banner','wandteppich','fackel','saeule','tafel','wache','hoefling','barde','held_platte','held_'+heroTier()].concat(S.inv.filter(function(id){return ITEMS[id]&&ITEMS[id].img;}).map(itemIcon));},
  sig:function(){return S.up.thron+'|'+S.inv.join(',');},
  st:function(x,FY,H){var u=S.up.thron,v=vibe(),fl=u<1&&v===0?'lehm':v===2?'marmor':'stein',car=function(vx,vy){var px=-28+vx*32;return u>=1&&vy>=1&&px>=148&&px<=212;};
-  wWall(x,FY,['holzwand','wand','prunkwand'][v]);wFloor(x,fl,FY,H,car,fl!=='lehm');wShade(x,FY,H,.55);
+  wWall(x,FY,['holzwand','wand','prunkwand'][v]);wFloor(x,fl,FY,H,car,fl==='stein');wShade(x,FY,H,.55);
   var tr=S.inv.filter(function(id){return ITEMS[id]&&ITEMS[id].sl==='trophae';});
-  [[132,FY-90],[228,FY-90],[84,FY-100],[276,FY-100]].forEach(function(q,i){var id=tr.filter(function(t){return t!=='pokal'&&t!=='kristallkrone'&&t!=='orkbanner';})[i];if(id)wPut(x,itemIcon(id),q[0],q[1]);});
+  [[132,FY-90],[228,FY-90],[84,FY-100],[276,FY-100]].forEach(function(q,i){var id=tr.filter(function(t){return t!=='pokal'&&t!=='kristallkrone'&&t!=='orkbanner'&&t!=='drachenschaedel';})[i];if(id)wPut(x,itemIcon(id),q[0],q[1]);});
   if(u>=2)(u>=7?['wandteppich','wandteppich']:['banner','banner']).forEach(function(n,i){wPut(x,n,i?276:84,FY+(u>=7?-12:4));});
   if(u>=3){wPut(x,'fackel',132,FY-36);wPut(x,'fackel',228,FY-36);}
   if(own('drachenschaedel')&&u>=1)wPut(x,'drachenschaedel',180,FY-64);
