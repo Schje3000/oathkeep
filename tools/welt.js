@@ -106,7 +106,7 @@ function heroStep(room,T){var f=fit(),h=W.hero,key=room+(S.up[room]||0);
  if(!h||W.hroom!==key){W.hroom=key;h=W.hero={x:180,tx:180,face:'s',walk:false,wait:12,fr:0,lane:3,range:[150,110,70][f],w0:[14,24,36][f],w1:[30,40,50][f],slow:[1,2,3][f]};}
  actorStep(h,28,332,[2.2,1.3,0.8][f],!!S.rest);return h;}
 /* Bodenlinie je Szene (y der Füsse im Bild), gemessen mit tools/boden.py */
-var FLOOR={};
+var FLOOR={"bib0":465,"bib1":455,"bib2":460,"bib3":445,"bib4":445,"bib5":388,"bib6":460,"bib7":408,"bib8":450,"garten0":448,"garten1":420,"garten2":455,"garten3":398,"garten4":415,"garten5":428,"garten6":482,"garten7":432,"garten8":478,"halle0":420,"halle1":435,"halle2":410,"halle3":452,"halle4":436,"halle5":455,"halle6":405,"halle7":400,"halle8":333,"hof0":390,"hof1":414,"hof2":452,"hof3":440,"hof4":448,"hof5":438,"hof6":397,"hof7":435,"hof8":440,"thron0":435,"thron1":435,"thron2":435,"thron3":405,"thron4":420,"thron5":405,"thron6":400,"thron7":420,"thron8":470,"turm0":425,"turm1":440,"turm2":405,"turm3":440,"turm4":438,"turm5":430,"turm6":470,"turm7":425,"turm8":425};
 /* Szenen in Seitenansicht: je Ausbaustufe ein Hochformatbild (360 x 512), so verschoben, dass seine Bodenlinie
    knapp über der Holzleiste liegt. Oben fällt nur Decke oder Himmel weg. */
 var SC_H=512;
@@ -174,8 +174,8 @@ function wDraw(c,room,H,T){var D=ROOMS2[room],B=room==='mauer'||room==='karte'?{
  if(room==='mauer'||room==='karte')return;
  var list=[],h=heroStep(room,B.T),f=S.rest?0:fit();list.push({a:h,im:heroSheet(),row:f});
  if(D.actors){var hp=happy(),names=D.actors();W.npc=W.npc||{};names.forEach(function(n,i){var a=W.npc[n];
-   if(!a){a=W.npc[n]={x:40+((i*97)%280),tx:0,face:i%2?'e':'s',walk:false,wait:10+i*7,fr:0,lane:[-6,-2,1,5,-4,3][i%6],range:120,w0:20,w1:60,slow:2};}
-   actorStep(a,24,336,0.7,!hp);var im=hp?wImg('bew_'+n):wTone('bew_'+n,'sad',function(r,g,b){var l=(r+g+b)/3;return[r*0.6+l*0.3,g*0.6+l*0.3,b*0.6+l*0.35];});
+   var hx=36+Math.round(i*288/Math.max(1,names.length-1));if(!a||a.n!==names.length){a=W.npc[n]={x:hx,tx:hx,face:i%2?'e':'s',walk:false,wait:10+i*9,fr:0,lane:[-8,2,-3,6,-6,4][i%6],range:40,w0:30,w1:80,slow:2,n:names.length,h:hx};}
+   actorStep(a,Math.max(20,a.h-45),Math.min(340,a.h+45),0.7,!hp);var im=hp?wImg('bew_'+n):wTone('bew_'+n,'sad',function(r,g,b){var l=(r+g+b)/3;return[r*0.6+l*0.3,g*0.6+l*0.3,b*0.6+l*0.35];});
    list.push({a:a,im:im,row:0,sad:!hp});});}
  list.sort(function(p,q){return p.a.lane-q.a.lane;});
  list.forEach(function(e){actorPaint(c,e.im,e.a,e.row,B.T);if(e.sad&&(tick+e.a.lane*5)%30<14){var R=pen(c),X=Math.round(e.a.x);R(X-1,B.T+e.a.lane-FOOT+4,2,6,'#f6ead0');R(X-1,B.T+e.a.lane-FOOT+12,2,2,'#f6ead0');}});}
