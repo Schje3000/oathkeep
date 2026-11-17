@@ -273,5 +273,11 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 - Zustände per Code statt eigener Bilder: Moder (`rxModer`), Farbvarianten mit `rxTone` (welke Pflanzen, dunkler Kristall, besorgte Bewohner), Abdunklung im Turm.
 - Stufen: Halle mit Teppich, Banner, Fackeln, Rüstung; Turm mit Regal und Teleskop; Bibliothek mit einem Regal je Stufe und Globus; Garten mit mehr Beeten, Vogelscheuche, Bienenkorb; Innenhof mit mehr Bewohnern.
 - Kachelsätze: Die Bezeichnung «upper/lower» ist bei Thron- und Gartenboden vertauscht. Der Holzboden wurde dadurch mit Stein statt Teppich verkettet, verwendet wird nur die reine Holzkachel. Der Teppich `teppich.png` ist offline aus den Thronsaal-Kacheln gebaut.
-- Noch gezeichnet: Aussenansicht der Burg und Weltkarte. Die Held-Vorschau beim Helden zeichnet weiterhin den alten Helden.
-- PixelLab-Guthaben ist aufgebraucht (Trial, 40 Generierungen). `tools/batch.py` erzeugt Bilder aus einer Liste, `tools/tileset.py` lädt Kachelsätze.
+- Die Held-Vorschau beim Helden zeichnet weiterhin den alten Helden (offene Entscheidung zur Anpassung).
+- Seit dem Abo (Tier 1, 2000 Generierungen pro Monat): `tools/batch.py` erzeugt Bilder aus einer Liste, `tools/tileset.py` lädt Kachelsätze.
+- Held: echte Zustände `Muede` (`4db411ae-31bd-4219-be1e-cc81a13d30a0`) und `Geschwaecht` (`b7e604d2-a414-4883-8e46-1b9e5b10b821`), je mit Laufen v3 nach Süd, Nord, Ost. Spritesheet `assets/thron/held.png`: 12 Zeilen, je Zustand (kräftig, müde, geschwächt) vier Zeilen: Ruhepose 8 Richtungen, Laufen Süd, Nord, Ost, je 8 Bilder. `tools/anim.py` reiht Laufanimationen ein.
+- Aussenansicht: `RX_ROOMS.mauer`, ein Bild je Mauerstufe (`burg1` bis `burg5`), oben und unten mit Wiese, Baumreihe und Weg fortgesetzt (`rxExtend`). Schaden zeigt Geröll, Risse und Staub.
+- Weltkarte: `RX_ROOMS.karte` mit `karte.png` und Symbolen (`m_burg`, `m_lager`, `m_festung`, `m_erobert`). Positionen in `RX_MAP`; die Burg und die erste Eroberung liegen auf den beiden in der Karte gezeichneten Burgen.
+- Thronsaal-Ausbau nach Charakterstufe: Tafel ab 3, Wachen ab 5, Hofdame ab 7, Barde ab 9. Pokal je Eroberung (bis 4), Drachenschild nach der ersten Eroberung. Der Held weicht der Tafel aus.
+- Innenhof mit sechs verschiedenen Bewohnern, Bibliothek mit Eule ab Stufe 5. Homescreen-Symbol aus `m_burg`.
+- Schrift: VT323.
