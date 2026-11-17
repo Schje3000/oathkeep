@@ -136,6 +136,9 @@ canvas.pv{border:3px solid var(--w4);border-radius:12px;box-shadow:0 3px 0 var(-
 #hud{padding-top:calc(12px + env(safe-area-inset-top))}
 #float{top:calc(74px + env(safe-area-inset-top))}
 #sheet{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+ul.tlog li{display:flex;align-items:center;gap:10px;padding:4px 0}
+.b.sm{min-height:44px;padding:0 12px;font-size:13px;flex:none}
+.b.warnb{color:#ffd9c8}
 </style>
 </head>
 <body>
@@ -172,7 +175,7 @@ function fresh(){var n=Date.now();return{v:1,updatedAt:0,created:n,name:'Held',
 function migrate(o){var d=fresh();if(!o||typeof o!=='object')return d;for(var k in d){if(o[k]===undefined)o[k]=d[k];}
  ['look','xp','wall','last'].forEach(function(g){for(var k in d[g]){if(o[g][k]===undefined)o[g][k]=d[g][k];}});return o;}
 
-var S=fresh(),ui={tab:'burg',km:'5',min:'15',confirm:'',imp:'',inv:'',mtab:'ansturm',room:'mauer',rmin:'20',btitle:''},sync='lokal',docRef=null,saving=false,pending=false,saveTimer=null;
+var S=fresh(),ui={tab:'burg',km:'5',min:'15',confirm:'',imp:'',inv:'',mtab:'ansturm',ttab:'kampf',unc:'',room:'mauer',rmin:'20',btitle:''},sync='lokal',docRef=null,saving=false,pending=false,saveTimer=null;
 try{var raw=localStorage.getItem('oathkeep');if(raw)S=migrate(JSON.parse(raw));}catch(e){}
 
 function saveLocal(){try{localStorage.setItem('oathkeep',JSON.stringify(S));}catch(e){}}
@@ -231,10 +234,14 @@ function logAct(k,a){
  var after=lvl(S.xp[K.s]);
  toast(after>before?SK[K.s]+' erreicht Stufe '+after+'!':K.n+': +'+x+' Ruhm, +'+st+' Mauerstein'+(po?', +1 Trank':''));
 }
-function undo(){var e=S.log[S.log.length-1];if(!e||dkey(e.t)!==dkey(Date.now())){toast('Nur Einträge von heute lassen sich zurücknehmen.');return;}
- S.log.pop();S.xp[e.s]=Math.max(0,S.xp[e.s]-e.x);S.stones=Math.max(0,S.stones-e.st);S.last[e.k]=e.pl;if(e.k==='book')S.books.pop();if(e.bf)S.buff=true;if(e.po)S.potions=Math.max(0,S.potions-1);
+function undoEntry(t){var i,e=null;for(i=S.log.length-1;i>=0;i--){if(S.log[i].t===t){e=S.log[i];break;}}if(!e)return false;
+ S.log.splice(i,1);S.xp[e.s]=Math.max(0,S.xp[e.s]-e.x);S.stones=Math.max(0,S.stones-e.st);if(e.bf)S.buff=true;if(e.po)S.potions=Math.max(0,S.potions-1);
+ if(S.last[e.k]===e.t){var lt=0;S.log.forEach(function(o){if(o.k===e.k&&o.t>lt)lt=o.t;});S.last[e.k]=lt||e.pl;}
+ if(e.k==='book'){for(i=S.books.length-1;i>=0;i--){if(S.books[i].t===e.t){S.books.splice(i,1);break;}}}
  (e.b||[]).forEach(function(id){S.bosses.forEach(function(b){if(b.id===id)b.dmg=Math.max(0,b.dmg-e.a);});});
- save();render();toast('Letzter Eintrag zurückgenommen');}
+ save();return true;}
+function undo(){var e=S.log[S.log.length-1];if(!e||dkey(e.t)!==dkey(Date.now())){toast('Nur Einträge von heute lassen sich zurücknehmen.');return;}
+ undoEntry(e.t);render();toast('Letzter Eintrag zurückgenommen');}
 function nextRaid(after){var d=new Date(after);d.setHours(20,0,0,0);d.setDate(d.getDate()+((7-d.getDay())%7));if(d.getTime()<=after)d.setDate(d.getDate()+7);return d.getTime();}
 function raids(){if(S.rest)return;var now=Date.now(),nr=nextRaid(S.lastRaid),n=0,msg='';
  while(nr<=now&&n<8){var c=S.log.filter(function(e){return e.t>nr-7*DAY&&e.t<=nr;}).length;
@@ -254,6 +261,8 @@ function act(a){var p=a.split(':');
  if(p[0]==='inv'){ui.inv=ui.inv===p[1]?'':p[1];render();return;}
  if(a==='potion'){if(S.potions>0&&!S.buff){S.potions--;S.buff=true;save();render();toast('Trank getrunken: Der nächste Eintrag gibt 50 % mehr Ruhm');}return;}
  if(a==='undo'){undo();return;}
+ if(p[0]==='ttab'){ui.ttab=p[1];ui.unc='';render();return;}
+ if(p[0]==='unlog'){var ut=parseInt(p[1],10);if(ui.unc!==p[1]){ui.unc=p[1];render();return;}ui.unc='';if(undoEntry(ut)){render();toast('Eintrag zurückgenommen');}return;}
  if(a==='wall:up'){var c=S.wall.lvl*8;if(S.wall.lvl<5&&S.stones>=c&&S.wall.dmg===0){S.stones-=c;S.wall.lvl++;save();render();toast('Mauer ausgebaut auf Stufe '+S.wall.lvl);}return;}
  if(a==='wall:fix'){if(S.wall.dmg>0&&S.stones>=3){S.stones-=3;S.wall.dmg--;save();render();toast('Mauer repariert');}return;}
  if(a==='rest'){var now=Date.now();if(!S.rest){S.rest=now;toast('Rast am Lagerfeuer: Timer und Ansturm pausieren');}else{var dur=now-S.rest;for(var k in S.last){if(S.last[k])S.last[k]+=dur;}S.lastRaid+=dur;S.rest=0;toast('Rast beendet');}save();render();return;}
@@ -279,10 +288,15 @@ function sheetStart(RI){var w=S.wall,cost=w.lvl*8,nr=nextRaid(S.lastRaid),lr=nul
 
 
 function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays(),pl=plant(),last=S.log.slice(-6).reverse();
- var C={hof:''};C.thron='<div class="card"><div class="row"><div class="grow"><div class="t">Training</div><div class="s">Diese Woche: '+sp+' von 3 bis 4 Einheiten</div></div></div>'+
- '<div class="s">Ausdauertraining diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
- '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Ausdauertraining</button></div>'+
- '<button class="b" data-act="log:gym">Kampftraining</button></div>';
+ var C={hof:''},gw=inWeek(['gym']).length,tk=ui.ttab==='aus'?'run':'gym';
+ var tlog=S.log.filter(function(e){return e.k===tk;}).slice(-5).reverse();
+ var tl=tlog.length?'<ul class="log tlog">'+tlog.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'.'+(e.k==='run'?' '+num(e.a)+' km':'')+', +'+e.x+' Ruhm</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>';
+ C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
+ (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Gym und Boxen. Diese Woche: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
+ '<button class="b pri" data-act="log:gym">Kampftraining eintragen</button></div>'
+ :'<div class="card"><div class="t">Ausdauertraining</div><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
+ '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Lauf eintragen</button></div></div>')+
+ '<div class="card"><div class="t">Zuletzt</div>'+tl+'</div>';
  C.turm='<div class="card"><div class="t">Klang-Magie</div><div class="s">Diese Woche: '+pd+' von 5 Tagen, je mindestens 15 Minuten</div>'+bar(pd,5)+
  '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="min" value="'+esc(ui.min)+'"></label><div class="grow"></div><button class="b pri" data-act="log:piano">Übung eintragen</button></div></div>';
  C.garten='<div class="card"><div class="row"><div class="grow"><div class="t">Garten bewässern</div><div class="s">Garten: <span class="'+(pl?'warn':'ok')+'">'+['frisch','welk','verdorrt','verrottet'][pl]+'</span>, Ziel 2 bis 3 Mal pro Woche</div></div><button class="b pri" data-act="log:water">Bewässert</button></div></div>';
@@ -707,7 +721,8 @@ function thLoad(){TH_FILES.forEach(function(k){var im=new Image();im.onload=func
 function thPale(){[[1,0.3,0.9],[2,0.7,0.78]].forEach(function(q){try{var im=TH.img.held,cv=mk(im.width,im.height),x=cv.getContext('2d');x.drawImage(im,0,0);var d=x.getImageData(0,0,cv.width,cv.height),p=d.data,i,l;
  for(i=0;i<p.length;i+=4){l=p[i]*0.3+p[i+1]*0.59+p[i+2]*0.11;p[i]=(p[i]+(l-p[i])*q[1])*q[2];p[i+1]=(p[i+1]+(l-p[i+1])*q[1])*q[2];p[i+2]=(p[i+2]+(l-p[i+2])*q[1])*q[2]+6*q[1];}
  x.putImageData(d,0,0);TH.pale[q[0]]=cv;}catch(e){TH.pale[q[0]]=TH.img.held;}});}
-function thFloorY(T){return T+96;}
+function thHudB(){var b=0;try{var a=document.getElementById('app').getBoundingClientRect(),k=document.getElementById('hud').children,i,r;for(i=0;i<k.length;i++){r=k[i].getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom-a.top);}if(a.width)b=b*360/a.width;}catch(e){}return Math.round(b);}
+function thFloorY(T){if(TH.fy===undefined){TH.fy=Math.max(T+96,thHudB()+100);}return TH.fy;}
 function thVisB(H){var v=H*0.6;try{var sh=document.getElementById('sheet'),a=document.getElementById('app');if(a.offsetHeight)v=H-Math.min(0.6,sh.offsetHeight/a.offsetHeight)*H;}catch(e){}return v;}
 function thStatic(H,T){var cv=mk(360,H),x=cv.getContext('2d'),I=TH.img,FY=thFloorY(T),wh=I.wand.height,i,j,k;x.imageSmoothingEnabled=false;
  x.fillStyle='#17110c';x.fillRect(0,0,360,H);
@@ -720,8 +735,8 @@ function thStatic(H,T){var cv=mk(360,H),x=cv.getContext('2d'),I=TH.img,FY=thFloo
  x.fillStyle='rgba(0,0,0,.28)';x.fillRect(0,FY,360,3);x.fillStyle='rgba(0,0,0,.12)';x.fillRect(0,FY+3,360,4);
  [84,276].forEach(function(cx){x.drawImage(I.banner,cx-20,FY-92);});
  [132,228].forEach(function(cx){x.drawImage(I.fackel,cx-16,FY-84);});
- [26,334].forEach(function(cx){x.fillStyle='rgba(0,0,0,.22)';x.beginPath();x.ellipse(cx,FY+54,26,7,0,0,7);x.fill();x.drawImage(I.saeule,cx-24,FY+58-160);});
- x.fillStyle='rgba(0,0,0,.2)';x.beginPath();x.ellipse(180,FY+40,50,8,0,0,7);x.fill();x.drawImage(I.thron,132,FY+46-112);
+ [26,334].forEach(function(cx){x.drawImage(I.saeule,cx-24,FY+58-160);});
+ x.drawImage(I.thron,132,FY+46-112);
  return cv;}
 function thHero(H,T){var h=TH.hero,FY=thFloorY(T),y0=FY+66,y1=Math.max(y0+20,Math.min(thVisB(H)-8,FY+230)),f=fit();
  if(!h){h=TH.hero={x:120,y:y0+30,tx:120,ty:y0+30,dir:'s',walk:false,wait:12,fr:0};}
@@ -734,7 +749,7 @@ function thHero(H,T){var h=TH.hero,FY=thFloorY(T),y0=FY+66,y1=Math.max(y0+20,Mat
  else if(--h.wait<=0){var mx=[150,110,70][f];h.tx=Math.max(56,Math.min(304,h.x+(Math.random()*2-1)*mx));h.ty=y0+Math.random()*(y1-y0);
   if(Math.abs(h.tx-h.x)+Math.abs(h.ty-h.y)>12){h.walk=true;h.fr=0;}else h.wait=10;}
  return h;}
-function thDraw(c,H,T){var sg=H+'|'+T;if(TH.sig!==sg||!TH.st){TH.st=thStatic(H,T);TH.sig=sg;}
+function thDraw(c,H,T){TH.fy=undefined;TH.fy=thFloorY(T);var sg=H+'|'+T+'|'+TH.fy;if(TH.sig!==sg||!TH.st){TH.st=thStatic(H,T);TH.sig=sg;}
  c.imageSmoothingEnabled=false;c.drawImage(TH.st,0,0);var FY=thFloorY(T),t=tick,i;
  [132,228].forEach(function(cx,q){var r=26+((t+q*3)%6<3?0:3),g=c.createRadialGradient(cx,FY-74,2,cx,FY-74,r);g.addColorStop(0,'rgba(255,190,90,.35)');g.addColorStop(1,'rgba(255,150,60,0)');c.fillStyle=g;c.fillRect(cx-r,FY-74-r,r*2,r*2);});
  var h=thHero(H,T),f=S.rest?0:fit(),sh=f?TH.pale[f]||TH.img.held:TH.img.held,row=0,col=0,flip=false,n;
