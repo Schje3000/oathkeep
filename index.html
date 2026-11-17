@@ -303,7 +303,7 @@ function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays()
  var tlog=S.log.filter(function(e){return e.k===tk;}).slice(-5).reverse();
  var tl=tlog.length?'<ul class="log tlog">'+tlog.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'.'+(e.k==='run'?' '+num(e.a)+' km':'')+', +'+e.x+' Ruhm</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>';
  C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
- (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Gym und Boxen. Training diese Woche, Läufe mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
+ (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Waffenübung und Faustkampf. Training diese Woche, Läufe mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
  '<button class="b pri" data-act="log:gym">Kampftraining eintragen</button></div>'
  :'<div class="card"><div class="t">Ausdauertraining</div><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
  '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Lauf eintragen</button></div></div>')+
@@ -349,7 +349,7 @@ function vMap(){var today=dkey(OK.now()),now=OK.now(),h='<div class="tabs"><butt
    '<div class="row"><label>Zielwert ('+A.u+')<input type="number" inputmode="decimal" min="1" data-boss="'+b.id+'" value="'+b.target+'"></label><div class="grow"></div><button class="b pri" data-act="boss:hit:'+b.id+'" '+(rdy?'':'disabled')+'>Abschliessen</button></div>';}
   h+='<button class="b" data-act="boss:del:'+b.id+'">'+(ui.confirm==='boss:del:'+b.id?'Wirklich löschen?':'Eroberung löschen')+'</button></div>';});
  h+='<div class="card"><div class="t">Neue Eroberung</div><label>Name<input id="bn" maxlength="40" placeholder="zum Beispiel Der Notenwurm"></label><label>Ziel<input id="bg" maxlength="60" placeholder="zum Beispiel ein Stück auswendig vorspielen"></label>'+
- '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Piano (Minuten)</option><option value="home">Haushalt (Aufgaben)</option><option value="read">Lesen (Bücher)</option></select></label>'+
+ '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Klang-Magie (Minuten)</option><option value="home">Haushalt (Aufgaben)</option><option value="read">Lesen (Bücher)</option></select></label>'+
  '<div class="row"><label class="grow">Zeitlimit<input id="bd" type="date"></label><label>Zielwert<input id="bt" type="number" inputmode="decimal" min="1"></label></div><button class="b pri" data-act="boss:add">Eroberung anlegen</button></div>';
  return h;}
 function icon(rows,pal){var o='<svg viewBox="0 0 8 8" width="30" height="30" shape-rendering="crispEdges" aria-hidden="true">';rows.forEach(function(r,y){for(var x=0;x<8;x++){if(r[x]!=='.')o+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+pal[r[x]]+'"/>';}});return o+'</svg>';}
@@ -385,7 +385,6 @@ function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" wid
  '<label>Sicherung einfügen<textarea rows="3" data-in="imp"></textarea></label><button class="b" data-act="import">Sicherung laden</button>'+
  '<button class="b" data-act="reset">'+(ui.confirm==='reset'?'Wirklich alles löschen?':'Spielstand zurücksetzen')+'</button></div>';
  return h;}
-var NAV=[['burg','Burg','M4 21V9h2V6h3v3h2V6h2v3h2V6h3v3h2v12zM10 21v-5a2 2 0 014 0v5'],['boss','Bosse','M5 21V4M5 4h12l-2.5 4L17 12H5']];
 function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;
  var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg">'+UI('zurueck')+'Burg</button>';
  var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
@@ -574,7 +573,7 @@ function ROOMINFO(){var f=fit(),m=moder(),pl=plant(),tw=tower(),hp=happy(),w=S.w
  return{mauer:{k:'MAUER',n:'Aussenansicht',l:w.lvl,c:w.dmg?'warn':'ok',s:w.dmg?'Schaden '+w.dmg:'intakt',d:'Mit Gold baust du die Burg aus. Schaden entsteht, wenn ein Ansturm der Horde durchkommt.'},
   garten:{k:'GARTEN',n:'Burggarten',l:lvl(S.xp.kra),c:pl?'warn':'ok',s:['frisch','welk','verdorrt','verrottet'][pl],d:'Ohne Wasser verfallen die Pflanzen. Neue Beete und mehr baust du mit Gold.'},
   halle:{k:'MODER',n:'Innenraum',l:lvl(S.xp.hau),c:m?'warn':'ok',s:m?m+' überfällig':'sauber',d:'Jede überfällige Putzaufgabe bringt Moder in die Halle. Einrichtung baust du mit Gold.'},
-  turm:{k:'ZAUBERTURM',n:'Zauberturm',l:lvl(S.xp.kla),c:tw===2?'ok':tw?'':'warn',s:['erloschen','glimmt','leuchtet'][tw],d:'Nach dem Üben schweben Noten durch den Turm. Nach Tagen ohne Piano wird es dunkel.'},
+  turm:{k:'ZAUBERTURM',n:'Zauberturm',l:lvl(S.xp.kla),c:tw===2?'ok':tw?'':'warn',s:['erloschen','glimmt','leuchtet'][tw],d:'Nach dem Üben schweben Noten durch den Turm. Nach Tagen ohne Übung wird es dunkel.'},
   thron:{k:'HELD',n:'Thronsaal',l:charLvl(),c:f===0?'ok':f===1?'':'warn',s:['kräftig','müde','geschwächt'][f],d:'Dein Held im Thronsaal. Ausbauten kaufst du mit Gold, Trophäen bringen Ansturm und Eroberungen.'},
   hof:{k:'BEWOHNER',n:'Innenhof',l:w.lvl,c:hp?'ok':'',s:hp?'zufrieden':'besorgt',d:nv+' Bewohner leben in der Burg. Sie sind zufrieden, wenn Mauer, Garten und Halle in Ordnung sind.'},
   bib:{k:'BIBLIOTHEK',n:'Bibliothek',l:lvl(S.xp.wis),c:'',s:nb+(nb===1?' Buch':' Bücher'),d:'Lesen bringt Wissen und Gold. Regale und mehr baust du mit Gold.'}};}
@@ -795,7 +794,7 @@ var RAR=OK.RAR,RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestun
  ROOMN={halle:'Innenraum',garten:'Burggarten',thron:'Thronsaal',turm:'Zauberturm',hof:'Innenhof'};
 function itemIcon(id){var it=ITEMS[id];return it.img||('i_'+id);}
 function eqBonus(k){return OK.eqBonus(S,k);}
-function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Piano',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
+function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Klang-Magie',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
  for(k in b)o.push(k==='def'?'+'+b[k]+' '+N[k]:'+'+Math.round(b[k]*100)+' % '+N[k]);return o.join(', ')||'Schmuck für '+'den Raum';}
 function lootRoll(src){return OK.lootRoll(S,src,now());}
 var lootText=OK.lootText;

@@ -22,7 +22,7 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
    - Zauberturm (Klang-Magie)
    - Bibliothek
    - Weltkarte mit beiden Tabs (Ansturm, Eroberungen)
-   - Heldenseite mit Live-Customization
+   - Heldenseite (Vorschau in Rüstung, Ausrüstung anlegen, Rast am Lagerfeuer)
 4. Prüfe jeden Bereich in allen Spielstand-Presets des Debug-Panels:
    leer, normal, 2 Wochen vernachlässigt, maximal.
 5. Prüfe zusätzlich auf kleinem Bildschirm (375 px breit) und grossem
@@ -34,7 +34,10 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
 ### Pixel-Art
 - Grafiken scharf, kein Verwischen beim Skalieren (image-rendering: pixelated)
 - Einheitliche Pixelgrösse innerhalb einer Szene, keine gemischten Auflösungen
-- Low Top-Down-Perspektive in allen Szenen einheitlich
+- Perspektive gemäss docs/style.md einheitlich: Räume und Möbel streng frontal
+  (Kamera leicht von oben, symmetrisch, nicht isometrisch), Böden in Draufsicht,
+  der Held einheitlich als Low-Top-Down-Sprite. Schräg oder isometrisch
+  gezeichnete Möbel sind ein Befund.
 - Dynamische Zustände sichtbar und verständlich (verrottete Pflanzen,
   beschädigte Mauer, schwacher Held, Moder, glückliche Bewohner)
 

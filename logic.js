@@ -15,9 +15,9 @@ OK.now=function(){return OK.clock.fixed!==null?OK.clock.fixed:Date.now()+OK.cloc
 /* ---------- Spieldaten ---------- */
 var SK=OK.SK={aus:'Ausdauer',sta:'Stärke',kla:'Klang-Magie',hau:'Hauswacht',kra:'Kräuterkunde',wis:'Wissen'};
 var CHORES=OK.CHORES=[{k:'kueche',n:'Burgküche schrubben',d:7},{k:'bad',n:'Waschraum scheuern',d:7},{k:'saugen',n:'Halle fegen',d:7},{k:'staub',n:'Gemächer entstauben',d:7},{k:'bett',n:'Lager frisch beziehen',d:21}];
-var KIND=OK.KIND={run:{s:'aus',n:'Ausdauertraining',area:'run'},gym:{s:'sta',n:'Kampftraining',area:'gym'},piano:{s:'kla',n:'Piano',area:'piano'},water:{s:'kra',n:'Garten bewässern'},waesche:{s:'hau',n:'Gewänder waschen'},read:{s:'wis',n:'Schriften studieren'},book:{s:'wis',n:'Buch vollendet',area:'read'}};
+var KIND=OK.KIND={run:{s:'aus',n:'Ausdauertraining',area:'run'},gym:{s:'sta',n:'Kampftraining',area:'gym'},piano:{s:'kla',n:'Klang-Magie',area:'piano'},water:{s:'kra',n:'Garten bewässern'},waesche:{s:'hau',n:'Gewänder waschen'},read:{s:'wis',n:'Schriften studieren'},book:{s:'wis',n:'Buch vollendet',area:'read'}};
 CHORES.forEach(function(c){KIND[c.k]={s:'hau',n:c.n,area:'home'};});
-OK.AREA={run:{n:'Ausdauertraining',u:'km'},gym:{n:'Kampftraining',u:'Einheiten'},piano:{n:'Piano',u:'Minuten'},home:{n:'Haushalt',u:'Aufgaben'},read:{n:'Lesen',u:'Bücher'}};
+OK.AREA={run:{n:'Ausdauertraining',u:'km'},gym:{n:'Kampftraining',u:'Einheiten'},piano:{n:'Klang-Magie',u:'Minuten'},home:{n:'Haushalt',u:'Aufgaben'},read:{n:'Lesen',u:'Bücher'}};
 
 var CAT=OK.CAT={
  burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
