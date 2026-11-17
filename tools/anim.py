@@ -19,7 +19,7 @@ for it in json.load(open(sys.argv[1])):
         except SystemExit:
             pass
         out = buf.getvalue()
-        if "slot" in out or "at a time" in out or "parallel" in out:
+        if "slot" in out or "at a time" in out or "parallel" in out or "rate limit" in out:
             time.sleep(10); continue
         break
     print(it["c"][:8], it["dir"], [l for l in out.splitlines() if l.startswith(("group", "cost", "error"))], flush=True)

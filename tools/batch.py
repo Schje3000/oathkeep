@@ -12,7 +12,7 @@ STYLE = (", seen from the front at a low top-down angle, 16-bit fantasy RPG pixe
          "clean dark outline, detailed shading, muted natural colours")
 
 def run(tool, args):
-    for _ in range(60):
+    for _ in range(360):
         buf = io.StringIO()
         try:
             with contextlib.redirect_stdout(buf):
@@ -20,7 +20,7 @@ def run(tool, args):
         except SystemExit:
             pass
         out = buf.getvalue()
-        if "job slots" in out or "at a time" in out:
+        if "job slots" in out or "at a time" in out or "rate limit" in out:
             time.sleep(10)
             continue
         return out

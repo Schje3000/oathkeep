@@ -70,11 +70,24 @@ Putzaufgaben teilen sich ein Tageslimit von 150 Ruhm. «Ruhm» ist die Erfahrung
 - Giessen: 2 bis 3 Mal pro Woche, er hat viele Pflanzen.
 - Putzen: je 7 Tage, Bettwäsche alle 3 Wochen.
 
-### Stufen
+### Stufen und Fortschritt
 
 - Stufe einer Fertigkeit: `floor(sqrt(ruhm / 30)) + 1`
-- Charakterstufe: Summe aller Fertigkeitsstufen minus Anzahl Fertigkeiten plus 1
-- Titel: «Eroberer» nach der ersten abgeschlossenen Eroberung, «Gelehrter» ab Wissen Stufe 3, «Weiser» ab Wissen Stufe 6. Ab Wissen Stufe 3 trägt der Held eine Brille.
+- Charakterstufe aus dem gesamten Ruhm: `floor(sqrt(summe / 150)) + 1` (nach einem Monat etwa 5, nach einem Jahr etwa 19).
+- Titel: «Eroberer» nach der ersten abgeschlossenen Eroberung, «Gelehrter» ab Wissen Stufe 3, «Weiser» ab Wissen Stufe 6.
+- Ziel: Alles ist nach etwa einem Jahr ausgebaut. Fortschritt wählt Jeremie selbst und bezahlt ihn mit Gold.
+- Alles wächst optisch: vom Bauernjungen in Tunika und einer Holzpalisade zur Festung mit Held in Goldrüstung.
+
+### Gold
+
+- Jeder Eintrag bringt Gold: `round(Ruhm / 5)`, mal Trank (50 % für 24 Stunden) und Ausrüstungsboni. Etwa 150 bis 200 Gold pro Woche.
+- Alter Mauerstein wurde beim Umbau 1 zu 5 in Gold umgerechnet (`migrate`).
+
+### Ausbau (`CAT` im Code)
+
+- Burg: 8 Stufen (`S.wall.lvl` 1 bis 8), je ein Bild `stufe0` bis `stufe7`. Preise 100 bis 1000, Voraussetzung Charakterstufe.
+- Thronsaal, Innenraum, Zauberturm, Bibliothek, Garten, Innenhof: je 8 Ausbauten (`S.up`). Preise 30 bis 360. Voraussetzung: Fertigkeit des Raums (Hauswacht, Klang-Magie, Wissen, Kräuterkunde) oder Charakterstufe (Thronsaal, Innenhof).
+- Stil der Räume folgt der Burgstufe (`vibe()`): 1 bis 3 Holz (Blockhaus, Palisade), 4 bis 6 Stein, 7 bis 8 Prunk (Marmor, hohe Mauer).
 
 ### Zustände (Tage seit dem letzten Eintrag)
 
@@ -88,35 +101,32 @@ Putzaufgaben teilen sich ein Tageslimit von 150 Ruhm. «Ruhm» ist die Erfahrung
 
 Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gesenktem Kopf, geschwächt dünn und gebeugt, Schwert am Boden nachgezogen. Das ist Jeremie wichtig.
 
-### Mauer
+### Mauer und Ansturm der Horde
 
-- Stufe 1 bis 5. Ausbau kostet Stufe mal 8 Mauerstein. Ein Fortschrittsbalken zeigt, wie viel bis zum nächsten Ausbau fehlt.
-- Schaden 0 bis 5. Reparatur kostet 3 Mauerstein pro Punkt. Solange Schaden besteht, ist kein Ausbau möglich.
-- Ausgelassene Routinen beschädigen, zerstören aber nie endgültig. Stufen und Freischaltungen gehen nie verloren.
-
-### Ansturm der Horde (wöchentlich)
-
-- Jeden Sonntag um 20 Uhr.
-- Verteidigung = Mauerstufe mal 10 + Einträge der letzten 7 Tage mal 4 - Moder mal 5 - Mauerschaden mal 5
-- Angriff = min(65, 25 + Charakterstufe mal 3)
-- Sieg: +4 Mauerstein. Niederlage: Mauerschaden +1.
-- Verpasste Sonntage werden beim nächsten Öffnen nachgerechnet (höchstens 8).
+- Schaden 0 bis 5, Reparatur 15 Gold pro Punkt. Solange Schaden besteht, kein Burgausbau.
+- Jeden Sonntag um 20 Uhr. Verteidigung = Burgstufe mal 10 + Einträge der letzten 7 Tage mal 4 - Moder mal 5 - Schaden mal 5 + Ausrüstung und Trophäen.
+- Angriff = min(150, 40 + 2 mal Anzahl bisheriger Anstürme): Die Horde wächst jede Woche.
+- Sieg: 20 Gold und mit 35 % Wahrscheinlichkeit Beute. Niederlage: Mauerschaden +1. Verpasste Sonntage werden nachgerechnet (höchstens 8).
 
 ### Eroberungen (früher «Bosse»)
 
-- Grössere Ziele mit Zeitlimit, vom Nutzer selbst angelegt: Name, Ziel, Bereich, Zeitlimit, Zielwert.
-- Bereiche: Ausdauertraining (km), Kampftraining (Einheiten), Piano (Minuten), Haushalt (Aufgaben), Lesen (Bücher).
-- Jeder Eintrag im passenden Bereich zählt automatisch als Fortschritt.
-- Zwei Balken: Fortschritt und verstrichene Zeit. Darunter «Im Plan» oder «Im Rückstand».
-- «Abschliessen» erst am Tag des Zeitlimits. Ziel erreicht: erobert, +20 Mauerstein. Sonst knapp, +8.
-- Vorhanden: «Der Aarewyrm», GP von Bern am 15. Mai 2027 (10 Meilen), Zielwert 300 km als Platzhalter. Jeremie nimmt teil.
+- Grössere Ziele mit Zeitlimit, vom Nutzer selbst angelegt: Name, Ziel, Bereich, Zeitlimit, Zielwert. Jeder passende Eintrag zählt automatisch.
+- «Abschliessen» erst am Tag des Zeitlimits. Ziel erreicht: erobert, 150 Gold, ein Ausrüstungsstück (selten oder episch) und eine Trophäe; auf der Karte entsteht ein Dorf. Nicht erreicht: gescheitert, keine Belohnung, kein Dorf.
+- Auf der Weltkarte: aktive Eroberung als Fahne, erobert als Dorf, gescheitert verschwindet sie.
+- Vorhanden: «Der Aarewyrm», GP von Bern am 15. Mai 2027 (10 Meilen), Zielwert 300 km als Platzhalter.
+
+### Beute (`ITEMS` im Code)
+
+- Plätze: Waffe, Rüstung, Talisman (anlegen beim Helden), dazu Trophäen (Thronsaal, je +1 bis +3 Verteidigung) und Einrichtung (erscheint in ihrem Raum).
+- Seltenheit: gewöhnlich, selten, episch. Doppelte Funde werden zu Gold.
+- Rüstung ist am Helden sichtbar: Tunika (ohne), Leder, Kettenhemd, Platte, Gold. Waffen wirken nur über Boni, der Held trägt die Waffe seiner Rüstungsstufe.
 
 ### Weiteres
 
-- **Rast am Lagerfeuer:** Bei Krankheit oder Ferien. Friert alle Timer und den Ansturm ein, keine Einträge möglich. Beim Beenden werden alle Zeitstempel um die Dauer verschoben.
-- **Tränke:** 1 Trank pro Bewässerungstag, solange der Garten frisch oder welk ist (max. 9). Ein Trank gibt 50 % mehr Ruhm auf den nächsten Eintrag. Jeremie will das später überdenken.
-- **Freischaltungen beim Helden:** Haut, Haar und drei Rüstungen frei. Goldrüstung nach der ersten Eroberung. Umhänge ab Ausdauer 3 und 6 sowie Klang-Magie 4. Helmbüsche ab Stärke 3 und 6.
-- **Zurücknehmen:** Nur der letzte Eintrag von heute.
+- **Rast am Lagerfeuer:** Bei Krankheit oder Ferien. Friert alle Timer und den Ansturm ein, keine Einträge möglich.
+- **Tränke:** Im Garten brauen (40 Gold, mit Kräuterkunde billiger) oder als Beute. Ein Trank gibt 24 Stunden lang 50 % mehr Gold.
+- **Zurücknehmen:** Im Thronsaal je Trainingsart die letzten fünf Einträge, sonst der letzte Eintrag von heute.
+- **Aufstieg:** Neue Charakterstufe zeigt eine Karte mit dem, was jetzt baubar ist (`S.lvlSeen`).
 
 ## 5. Oberfläche
 
@@ -242,8 +252,8 @@ Wenn der Testraum überzeugt: Aussenansicht, Garten (Pflanzen in vier Zuständen
 
 Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 
-- **Heldenanpassung mit PixelLab-Grafik:** Heute werden Farben per Code getauscht. Mit fertigen Sprites geht das nicht mehr frei. Möglich sind feste Varianten (eigene Sprites je Ausrüstung) oder Umfärben über eine Palette.
-- **Tränke:** behalten, ändern oder streichen.
+- **Heldenanpassung:** entschieden. Die frühere Farbwahl ist durch Ausrüstung ersetzt (Rüstung sichtbar am Helden). `S.look` bleibt im Spielstand, wird aber nicht mehr angezeigt.
+- **Tränke:** entschieden, kaufbar und als Beute, wirken 24 Stunden auf Gold.
 - **Spielwerte:** nach ein bis zwei Wochen Alltag anpassen.
 - **Ideen für später, noch nicht beauftragt:** Kämpfe mit Entscheidungen, Talentpunkte, Mitteilungen bei fälligen Aufgaben, Import von Läufen aus Apple Health (nur als native App).
 
@@ -255,29 +265,11 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 - Texte in der App mittelalterlich und knapp halten, passend zu den bestehenden Namen.
 - Grössere Umbauten in kleinen Schritten, mit Git-Commit pro Schritt.
 
-## 11. Stand PixelLab
+## 11. Stand PixelLab und Grafik
 
-- Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung und wird vom Proxy eingesetzt. Konto im Trial: nur 1 Auftrag gleichzeitig, Generierungen knapp.
-- Held: Charakter `89a15b04-044d-4997-96c6-8d653debb432` (64 px, 8 Richtungen, Low Top-Down).
-  - Laufen Vorlage «walking» (Gruppe `ffbb5fb9-…`): Süd verwendet, Nord unbrauchbar, Ost mit flackerndem Schwert.
-  - Laufen v3 (Gruppe `35735bfc-ed24-4e43-ae26-96c6afbe7e7f`): Nord und Ost, 92 px, 9 Bilder, Bild 0 ist die Ruhepose.
-  - «sad-walk» Süd (Gruppe `6115c2fd-…`): für müde, wirkt nur schwach.
-- Boden mit Teppich: Kachelsatz `3d14a3a2-cd33-46a5-8ed5-0ca86c212f6a` (32 px, Wang). Die Ecken-Kennzeichnung «upper/lower» ist in den Metadaten vertauscht, siehe `TH_WANG` und `car()` im Code.
-- Möbel und Wand: `create_image_pixen`, je 1 Generierung.
-- Im Code: `TH`, `thLoad`, `thStatic`, `thHero`, `thDraw`. Spritesheet `assets/thron/held.png` mit Zellen 92 × 92: Zeile 0 Ruheposen in 8 Richtungen (S, SO, O, NO, N, NW, W, SW), Zeile 1 Laufen Süd, 2 Nord, 3 Ost (West gespiegelt), 4 müde Süd. Müde und geschwächt werden zusätzlich per Code entsättigt.
-- Fehlen die Bilder (etwa als Claude-Artifact), zeichnet die App den alten Thronsaal.
-
-### Übrige Räume (Stand 17. November 2026)
-
-- Innenraum, Zauberturm, Bibliothek, Burggarten und Innenhof sind aus PixelLab-Grafiken in `assets/raum/` zusammengesetzt. Code: `RX`, `RX_ROOMS`, `rxDraw`, `rxOk`. Gemeinsame Teile: Wand und Fackeln aus dem Thronsaal, Böden als Kachelsätze (`holz`, `garten`, `hof`).
-- Zustände per Code statt eigener Bilder: Moder (`rxModer`), Farbvarianten mit `rxTone` (welke Pflanzen, dunkler Kristall, besorgte Bewohner), Abdunklung im Turm.
-- Stufen: Halle mit Teppich, Banner, Fackeln, Rüstung; Turm mit Regal und Teleskop; Bibliothek mit einem Regal je Stufe und Globus; Garten mit mehr Beeten, Vogelscheuche, Bienenkorb; Innenhof mit mehr Bewohnern.
-- Kachelsätze: Die Bezeichnung «upper/lower» ist bei Thron- und Gartenboden vertauscht. Der Holzboden wurde dadurch mit Stein statt Teppich verkettet, verwendet wird nur die reine Holzkachel. Der Teppich `teppich.png` ist offline aus den Thronsaal-Kacheln gebaut.
-- Die Held-Vorschau beim Helden zeichnet weiterhin den alten Helden (offene Entscheidung zur Anpassung).
-- Seit dem Abo (Tier 1, 2000 Generierungen pro Monat): `tools/batch.py` erzeugt Bilder aus einer Liste, `tools/tileset.py` lädt Kachelsätze.
-- Held: echte Zustände `Muede` (`4db411ae-31bd-4219-be1e-cc81a13d30a0`) und `Geschwaecht` (`b7e604d2-a414-4883-8e46-1b9e5b10b821`), je mit Laufen v3 nach Süd, Nord, Ost. Spritesheet `assets/thron/held.png`: 12 Zeilen, je Zustand (kräftig, müde, geschwächt) vier Zeilen: Ruhepose 8 Richtungen, Laufen Süd, Nord, Ost, je 8 Bilder. `tools/anim.py` reiht Laufanimationen ein.
-- Aussenansicht: `RX_ROOMS.mauer`, ein Bild je Mauerstufe (`burg1` bis `burg5`), oben und unten mit Wiese, Baumreihe und Weg fortgesetzt (`rxExtend`). Schaden zeigt Geröll, Risse und Staub.
-- Weltkarte: `RX_ROOMS.karte` mit `karte.png` und Symbolen (`m_burg`, `m_lager`, `m_festung`, `m_erobert`). Positionen in `RX_MAP`; die Burg und die erste Eroberung liegen auf den beiden in der Karte gezeichneten Burgen.
-- Thronsaal-Ausbau nach Charakterstufe: Tafel ab 3, Wachen ab 5, Hofdame ab 7, Barde ab 9. Pokal je Eroberung (bis 4), Drachenschild nach der ersten Eroberung. Der Held weicht der Tafel aus.
-- Innenhof mit sechs verschiedenen Bewohnern, Bibliothek mit Eule ab Stufe 5. Homescreen-Symbol aus `m_burg`.
-- Schrift: VT323.
+- Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`, Bildserien mit `tools/batch.py <liste.json> <ordner>` (überspringt vorhandene, wartet bei vollen Plätzen), Kachelsätze mit `tools/tileset.py`, Heldenstufen mit `tools/tiers.py`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung. Abo Tier 1: 2000 Generierungen pro Monat, 8 Aufträge gleichzeitig.
+- **Perspektive:** Möbel immer mit dem Zusatz «strict front view ... symmetrical, camera looks slightly down, not isometric» erzeugen (siehe `tools/batch.py`-Listen). Ohne ihn zeichnet PixelLab schräg.
+- Held: Grundfigur `89a15b04-044d-4997-96c6-8d653debb432` mit Zuständen je Rüstungsstufe (Tunika, Leder, Kette, Platte = Grundfigur, Gold), je kräftig, müde, geschwächt mit Laufen v3 nach Süd, Nord, Ost. IDs in `tools/tiers_out.json`. Spritesheets `assets/held/<stufe>.png`: Zellen 92 × 92, 12 Zeilen (je Zustand: Ruhepose 8 Richtungen, Laufen Süd, Nord, Ost).
+- Grafiken: `assets/raum/` (Räume, Burgstufen `stufe0` bis `stufe7`, Karte `karte4`, Kartensymbole `mb0` bis `mb3`, `m_lager`, `m_fahne`, `m_dorf`, Gegenstände `i_*`, Oberflächensymbole `u_*`).
+- Kachelsätze (32 px, Wang, Tabelle `TH_WANG`): `stein` (Stein und Teppich, vertauscht), `holz`, `garten` (vertauscht), `hof`, `lehm`, `marmor`.
+- Code: Block zwischen `/* WELT-START */` und `/* WELT-ENDE */` in `index.html`, Quelle `tools/welt.js`. `ROOMS2` je Ort mit `f` (Bilder), `sig`, `st` (statisch, gecacht), `dy` (animiert). Der Held läuft in allen Räumen (`heroStep`, `heroPaint`), Möbel vor ihm werden nach ihm neu gezeichnet. Fehlen Bilder, zeichnet die App die alte Szene (`ROOMS`).
