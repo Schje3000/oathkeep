@@ -254,3 +254,15 @@ Diese Punkte sind nicht entschieden. Frag Jeremie, bevor du sie umsetzt:
 - Keine Funktion entfernen, die Jeremie nicht ausdrücklich streichen will.
 - Texte in der App mittelalterlich und knapp halten, passend zu den bestehenden Namen.
 - Grössere Umbauten in kleinen Schritten, mit Git-Commit pro Schritt.
+
+## 11. Stand PixelLab (Prototyp Thronsaal)
+
+- Aufrufe über `tools/pixellab.py <werkzeug> '<json>'`. Der Schlüssel liegt als Netzwerk-Geheimnis in der Cloud-Umgebung und wird vom Proxy eingesetzt. Konto im Trial: nur 1 Auftrag gleichzeitig, Generierungen knapp.
+- Held: Charakter `89a15b04-044d-4997-96c6-8d653debb432` (64 px, 8 Richtungen, Low Top-Down).
+  - Laufen Vorlage «walking» (Gruppe `ffbb5fb9-…`): Süd verwendet, Nord unbrauchbar, Ost mit flackerndem Schwert.
+  - Laufen v3 (Gruppe `35735bfc-ed24-4e43-ae26-96c6afbe7e7f`): Nord und Ost, 92 px, 9 Bilder, Bild 0 ist die Ruhepose.
+  - «sad-walk» Süd (Gruppe `6115c2fd-…`): für müde, wirkt nur schwach.
+- Boden mit Teppich: Kachelsatz `3d14a3a2-cd33-46a5-8ed5-0ca86c212f6a` (32 px, Wang). Die Ecken-Kennzeichnung «upper/lower» ist in den Metadaten vertauscht, siehe `TH_WANG` und `car()` im Code.
+- Möbel und Wand: `create_image_pixen`, je 1 Generierung.
+- Im Code: `TH`, `thLoad`, `thStatic`, `thHero`, `thDraw`. Spritesheet `assets/thron/held.png` mit Zellen 92 × 92: Zeile 0 Ruheposen in 8 Richtungen (S, SO, O, NO, N, NW, W, SW), Zeile 1 Laufen Süd, 2 Nord, 3 Ost (West gespiegelt), 4 müde Süd. Müde und geschwächt werden zusätzlich per Code entsättigt.
+- Fehlen die Bilder (etwa als Claude-Artifact), zeichnet die App den alten Thronsaal.
