@@ -11,8 +11,13 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
 
 ## Vorgehen
 
-1. Starte den Dev-Server und öffne die App mit den Playwright-Tools.
-2. Öffne den Debug-Modus über den URL-Parameter ?debug=1.
+1. Starte den Dev-Server im Projektordner (`python3 -m http.server 8000`, im
+   Hintergrund) und öffne http://localhost:8000/?debug=1 mit den
+   Playwright-Tools. Notiere Branch und letzten Commit (`git log -1 --oneline`).
+2. Das Debug-Panel öffnest du unten links mit dem Knopf «Debug». Es arbeitet
+   auf einem eigenen Spielstand, du kannst also frei vorspulen und Vorlagen
+   laden. Fehlt das Panel, prüfe ohne Vorlagen und sag es im Bericht.
+   Schliesse das Panel vor jedem Screenshot.
 3. Rufe jeden Bereich auf:
    - Burg-Aussenansicht (Startbildschirm, Mauerstärke)
    - Thronsaal (Held, Ausrüstung, Trophäen)
@@ -24,19 +29,48 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
    - Weltkarte mit beiden Tabs (Ansturm, Eroberungen)
    - Heldenseite (Vorschau in Rüstung, Ausrüstung anlegen, Rast am Lagerfeuer)
 4. Prüfe jeden Bereich in allen Spielstand-Presets des Debug-Panels:
-   leer, normal, 2 Wochen vernachlässigt, maximal.
+   leer, normal, 2 Wochen vernachlässigt, maximal. Prüfe ausserdem «+1 Woche»
+   und «Ansturm», damit Verfall und Mauerschaden sichtbar werden.
 5. Prüfe zusätzlich auf kleinem Bildschirm (375 px breit) und grossem
    Bildschirm (430 px breit). Ändere dafür die Fenstergrösse.
-6. Mache von jedem Befund einen Screenshot.
+6. Mache von jedem Befund einen Screenshot und speichere ihn im
+   Scratchpad, nie im Projektordner.
+
+## Testkennungen
+
+Bedienelemente haben `data-testid`. Statisch: `scene`, `hud`, `float`,
+`sheet`, `toast`. Knöpfe aus `data-act`: `act-room-<raum>` (garten, halle,
+turm, thron, hof, bib), `act-home`, `act-tab-boss`, `act-tab-held`,
+`act-mtab-ansturm`, `act-mtab-erob`, `act-log-<routine>`. Eingabefelder
+`in-<name>`, Karten `card-<titel>`. Debug-Panel: `debug-toggle`,
+`debug-time-day`, `debug-time-week`, `debug-time-raid`,
+`debug-preset-<leer|normal|vernachlaessigt|maximal>`, `debug-reset`,
+`debug-time-reset`. Fehlt einem wichtigen Element eine Kennung, ist das ein
+Befund (Feinschliff).
+
+## Perspektive im Umbau
+
+Die Zielperspektive ist Seitenansicht (docs/style.md). Der Umbau läuft
+schrittweise, deshalb:
+
+- Stelle pro Szene fest, ob sie schon in Seitenansicht ist (Bilder `s_*`,
+  Held `held_s_*` in `assets/`) oder noch frontal (`v_*`, `held_<stufe>`).
+- Noch frontale Szenen meldest du nicht einzeln, sondern einmal gesammelt als
+  **Stand des Umbaus** (Liste der Szenen) am Anfang des Berichts.
+- Szenen in Seitenansicht prüfst du streng nach den Prüfpunkten unten.
+  Gemischte Perspektive innerhalb einer Szene (zum Beispiel Held von der Seite
+  in einem frontalen Raum) ist ein Befund.
 
 ## Prüfpunkte
 
 ### Pixel-Art
 - Grafiken scharf, kein Verwischen beim Skalieren (image-rendering: pixelated)
 - Einheitliche Pixelgrösse innerhalb einer Szene, keine gemischten Auflösungen
-- Perspektive gemäss docs/style.md: alle Räume und die Aussenansicht in
-  Seitenansicht (Sidescroller), nur die Weltkarte von oben. Frontal, von oben
-  oder isometrisch gezeichnete Szenen sind ein Befund.
+- Perspektive gemäss docs/style.md: Räume und Aussenansicht in Seitenansicht
+  (Sidescroller), nur die Weltkarte von oben. Für noch nicht umgebaute Szenen
+  siehe «Perspektive im Umbau».
+- Bodenlinie knapp über der Holzleiste, nicht von ihr verdeckt, oben nur
+  Decke oder Himmel unter der Kopfleiste.
 - Held und Bewohner stehen genau auf der Bodenlinie (nicht schwebend, nicht
   im Boden versunken), laufen nur waagrecht, Blickrichtung passt zur
   Laufrichtung, Massstab passt zu den Möbeln.
@@ -70,7 +104,9 @@ Verbindliche Referenz für den Stil ist die Datei docs/style.md. Lies sie zuerst
 
 ## Bericht
 
-Sortiert nach Schweregrad:
+Zuerst: Branch und Commit, Stand des Umbaus, nicht prüfbare Punkte.
+
+Dann die Befunde, sortiert nach Schweregrad:
 
 **Kritisch** (kaputt, unbedienbar oder unlesbar)
 **Störend** (funktioniert, wirkt aber falsch oder unruhig)
