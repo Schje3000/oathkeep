@@ -113,7 +113,7 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 ### Eroberungen (früher «Bosse»)
 
 - Grössere Ziele mit Zeitlimit, vom Nutzer selbst angelegt: Name, Ziel, Bereich, Zeitlimit, Zielwert. Jeder passende Eintrag zählt automatisch.
-- «Abschliessen» erst am Tag des Zeitlimits. Ziel erreicht: erobert, 150 Gold, ein Ausrüstungsstück (selten oder episch) und eine Trophäe; auf der Karte entsteht ein Dorf. Nicht erreicht: gescheitert, keine Belohnung, kein Dorf.
+- «Abschliessen» erst am Tag des Zeitlimits. Ziel erreicht: erobert, 150 Gold, ein Ausrüstungs- oder Möbelstück (selten oder episch) und eine Trophäe; auf der Karte entsteht ein Dorf. Nicht erreicht: gescheitert, keine Belohnung, kein Dorf.
 - Auf der Weltkarte: aktive Eroberung als Fahne, erobert als Dorf, gescheitert verschwindet sie.
 - Vorhanden: «Der Aarewyrm», GP von Bern am 15. Mai 2027 (10 Meilen), Zielwert 300 km als Platzhalter.
 

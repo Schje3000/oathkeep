@@ -191,7 +191,8 @@ OK.lootRoll=function(S,src,now,rng){rng=rng||Math.random;var got=[],gold=0,pick=
   var sl=ITEMS[id].sl;if((sl==='waffe'||sl==='ruestung'||sl==='talisman')&&!S.equip[sl])S.equip[sl]=id;};
  var r=rng();
  if(src==='raid'){if(r<0.35)pick(r<0.0175?2:r<0.105?1:0);}
- else{pick(rng()<0.4?2:1,['waffe','ruestung','talisman']);pick(rng()<0.3?2:rng()<0.6?1:0,['trophae']);}
+ /* Eroberung: ein Ausrüstungs- oder Möbelstück (selten oder episch) und eine Trophäe. */
+ else{pick(rng()<0.4?2:1,['waffe','ruestung','talisman','moebel']);pick(rng()<0.3?2:rng()<0.6?1:0,['trophae']);}
  S.gold+=gold;var e={t:now,src:src,items:got,gold:gold};S.loot.push(e);if(S.loot.length>20)S.loot=S.loot.slice(-20);
  return e;};
 OK.lootText=function(e){return e.items.map(function(id){return ITEMS[id].n+' ('+RAR[ITEMS[id].r]+')';}).concat(e.gold?[e.gold+' Gold']:[]).join(', ');};

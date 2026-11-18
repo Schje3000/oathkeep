@@ -547,12 +547,12 @@ describe('Eroberungen', () => {
     const sl = r.loot.items.map((id) => OK.ITEMS[id].sl);
     expect(sl).toContain('trophae'); expect(r.loot.items).toHaveLength(2);
   });
-  it('Eroberungsbeute: das Ausrüstungsstück ist selten oder episch und eine Waffe, Rüstung oder Talisman', () => {
+  it('Eroberungsbeute: das erste Stück ist selten oder episch und Ausrüstung oder Einrichtung', () => {
     const S = mk(10); S.bosses[0].dmg = 10;
     const r = OK.finishBoss(S, S.bosses[0].id, T('2026-11-30T12:00:00'), rng(0.99));
     const it0 = OK.ITEMS[r.loot.items[0]];
     expect(it0.r).toBeGreaterThanOrEqual(1);
-    expect(['waffe', 'ruestung', 'talisman']).toContain(it0.sl);
+    expect(['waffe', 'ruestung', 'talisman', 'moebel']).toContain(it0.sl);
   });
   it('Knapp verfehlt: gescheitert, keine Belohnung; zweites Abschliessen tut nichts', () => {
     const S = mk(10); S.bosses[0].dmg = 9.9; const g = S.gold;
