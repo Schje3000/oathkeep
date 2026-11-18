@@ -78,7 +78,7 @@ describe('Ruhm und Gold je Routine', () => {
   it('Kampftraining: 50 Ruhm, nur einmal pro Tag', () => {
     expect(OK.logEntry(S, 'gym', 1, NOW).x).toBe(50);
     const r = OK.logEntry(S, 'gym', 1, NOW + H);
-    expect(r.x).toBe(0); expect(r.g).toBe(0); expect(S.xp.sta).toBe(50);
+    expect(r).toMatchObject({ ok: false, err: 'today' }); expect(S.xp.sta).toBe(50); expect(S.log).toHaveLength(1);
   });
   it('Piano: 2 Ruhm pro Minute, höchstens 80 pro Tag', () => {
     expect(OK.logEntry(S, 'piano', 30, NOW).x).toBe(60);
@@ -87,7 +87,7 @@ describe('Ruhm und Gold je Routine', () => {
   });
   it('Giessen: 25 Ruhm, nur einmal pro Tag', () => {
     expect(OK.logEntry(S, 'water', 1, NOW).x).toBe(25);
-    expect(OK.logEntry(S, 'water', 1, NOW + H).x).toBe(0);
+    expect(OK.logEntry(S, 'water', 1, NOW + H)).toMatchObject({ ok: false, err: 'today' });
   });
   it('Putzaufgaben: je 30 Ruhm, gemeinsames Tageslimit 150', () => {
     CH.forEach((k, i) => expect(OK.logEntry(S, k, 1, NOW + i * 60000).x).toBe(30));
@@ -165,13 +165,13 @@ describe('Tageswechsel Europe/Zurich', () => {
     expect(OK.dkey(T('2026-03-29T00:30:00'))).toBe('2026-03-29');
     expect(OK.dkey(T('2026-03-29T23:30:00'))).toBe('2026-03-29');
     expect(OK.logEntry(S, 'gym', 1, T('2026-03-29T00:30:00')).x).toBe(50);
-    expect(OK.logEntry(S, 'gym', 1, T('2026-03-29T23:30:00')).x).toBe(0);
+    expect(OK.logEntry(S, 'gym', 1, T('2026-03-29T23:30:00')).err).toBe('today');
     expect(OK.logEntry(S, 'gym', 1, T('2026-03-30T00:00:00')).x).toBe(50);
   });
   it('Winterzeitbeginn 25.10.2026 (25 Stunden): 00:10 und 23:50 sind derselbe Tag', () => {
     const S = OK.fresh(T('2026-10-20T12:00:00'));
     expect(OK.logEntry(S, 'gym', 1, T('2026-10-25T00:10:00')).x).toBe(50);
-    expect(OK.logEntry(S, 'gym', 1, T('2026-10-25T23:50:00')).x).toBe(0);
+    expect(OK.logEntry(S, 'gym', 1, T('2026-10-25T23:50:00')).err).toBe('today');
     expect(OK.dkey(T('2026-10-25T23:59:59'))).toBe('2026-10-25');
     expect(OK.dkey(T('2026-10-26T00:00:00'))).toBe('2026-10-26');
   });
@@ -337,7 +337,9 @@ describe('Rast am Lagerfeuer', () => {
   it('Missbrauch: kurze Rast über Sonntag 20 Uhr umgeht den Ansturm nicht', () => {
     const S = OK.fresh(T('2026-11-01T12:00:00')); S.lastRaid = T('2026-11-08T20:00:00');
     OK.toggleRest(S, T('2026-11-15T19:59:00')); OK.toggleRest(S, T('2026-11-15T20:01:00'));
-    expect(OK.resolveRaids(S, T('2026-11-15T20:01:00'), rng(0.9)).n).toBe(1);
+    // Eingefroren: Der Ansturm kommt um die Rastdauer (2 Minuten) später, er entfällt nicht.
+    expect(OK.resolveRaids(S, T('2026-11-15T20:01:00'), rng(0.9)).n).toBe(0);
+    expect(OK.resolveRaids(S, T('2026-11-15T20:03:00'), rng(0.9)).n).toBe(1);
   });
   it('Missbrauch: Rast an und aus setzt keinen Verfall zurück', () => {
     const t0 = T('2026-11-01T12:00:00'); const S = OK.fresh(t0);
@@ -654,5 +656,28 @@ describe('Spielstand', () => {
   it('Verlauf wird auf 400 Einträge gekürzt, Anstürme auf 12', () => {
     const S = OK.fresh(NOW); S.log = Array.from({ length: 450 }, (_, i) => ({ t: i })); S.raids = Array.from({ length: 20 }, (_, i) => ({ t: i }));
     OK.trim(S); expect(S.log).toHaveLength(400); expect(S.log[0].t).toBe(50); expect(S.raids).toHaveLength(12);
+  });
+});
+
+describe('Korrekturen nach dem ersten Testlauf', () => {
+  it('Rast verschiebt den Ansturm um die Rastdauer', () => {
+    const S = OK.fresh(T('2026-11-01T12:00:00')); S.lastRaid = T('2026-11-08T20:00:00');
+    OK.toggleRest(S, T('2026-11-14T10:00:00')); OK.toggleRest(S, T('2026-11-16T10:00:00'));
+    expect(OK.raidDue(S)).toBe(T('2026-11-17T20:00:00'));
+    expect(OK.resolveRaids(S, T('2026-11-17T20:01:00'), rng(0.9)).n).toBe(1);
+    expect(OK.raidDue(S)).toBe(T('2026-11-22T20:00:00')); // danach wieder sonntags
+  });
+  it('Spielstand mit kaputten Feldern wird repariert, bekannte Werte bleiben', () => {
+    const o = JSON.parse(JSON.stringify(OK.fresh(NOW - 10 * D)));
+    o.gold = 321; o.xp = null; o.wall = 'kaputt'; o.log = [null, { t: NOW, k: 'run', a: '5', x: 60, g: 12 }, { k: 'unsinn' }];
+    const S = OK.migrate(o, NOW);
+    expect(S.gold).toBe(321);
+    expect(S.xp.aus).toBe(0); expect(S.wall.lvl).toBe(1);
+    expect(S.log).toHaveLength(1); expect(S.log[0].a).toBe(5);
+  });
+  it('Titel Eroberer nur nach gewonnener Eroberung', () => {
+    const S = OK.fresh(NOW); S.bosses = [{ id: 'x', done: true, won: false, date: '2026-01-01', dmg: 0, target: 1 }];
+    expect(OK.bossWon(S)).toBe(false);
+    S.bosses[0].won = true; expect(OK.bossWon(S)).toBe(true);
   });
 });

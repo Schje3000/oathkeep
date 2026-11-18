@@ -17,7 +17,7 @@ var SK=OK.SK={aus:'Ausdauer',sta:'Stärke',kla:'Klang-Magie',hau:'Hauswacht',kra
 var CHORES=OK.CHORES=[{k:'kueche',n:'Burgküche schrubben',d:7},{k:'bad',n:'Waschraum scheuern',d:7},{k:'saugen',n:'Halle fegen',d:7},{k:'staub',n:'Gemächer entstauben',d:7},{k:'bett',n:'Lager frisch beziehen',d:21}];
 var KIND=OK.KIND={run:{s:'aus',n:'Ausdauertraining',area:'run'},gym:{s:'sta',n:'Kampftraining',area:'gym'},piano:{s:'kla',n:'Klang-Magie',area:'piano'},water:{s:'kra',n:'Garten bewässern'},waesche:{s:'hau',n:'Gewänder waschen'},read:{s:'wis',n:'Schriften studieren'},book:{s:'wis',n:'Buch vollendet',area:'read'}};
 CHORES.forEach(function(c){KIND[c.k]={s:'hau',n:c.n,area:'home'};});
-OK.AREA={run:{n:'Ausdauertraining',u:'km'},gym:{n:'Kampftraining',u:'Einheiten'},piano:{n:'Klang-Magie',u:'Minuten'},home:{n:'Haushalt',u:'Aufgaben'},read:{n:'Lesen',u:'Bücher'}};
+OK.AREA={run:{n:'Ausdauertraining',u:'km'},gym:{n:'Kampftraining',u:'Einheiten'},piano:{n:'Klang-Magie',u:'Minuten'},home:{n:'Burgpflege',u:'Aufgaben'},read:{n:'Schriften',u:'Bücher'}};
 
 var CAT=OK.CAT={
  burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
@@ -52,14 +52,24 @@ function fresh(now){var n=now;return{v:1,updatedAt:0,created:n,name:'Held',
  look:{skin:'#e0b08a',hair:'#5b3a22',armor:'#8e9aa0',cape:'none',plume:'none'},
  xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],
  last:{run:n,gym:n,piano:0,water:n,kueche:n,bad:n,saugen:n,staub:n,bett:n,waesche:0,read:0,book:0},
- log:[],runGoal:50,rest:0,lastRaid:n,raids:[],
+ log:[],runGoal:50,rest:0,lastRaid:n,raidDue:0,raids:[],
  bosses:[{id:'gp',name:'Der Aarewyrm',goal:'GP von Bern',area:'run',date:'2027-05-15',target:300,dmg:0,done:false,won:false}]};}
 OK.fresh=fresh;
 OK.migrate=function(o,now){var d=fresh(now);if(!o||typeof o!=='object')return d;
  if(o.gold===undefined){o.gold=Math.round((o.stones||0)*5);o.raidN=(o.raids||[]).length;if(o.buff){o.buffUntil=now+DAY;o.buff=false;}o.lvlSeen=charLvlOf(o.xp||{});}
  if(!o.up&&o.xp){var ol=function(k){return Math.floor(Math.sqrt((o.xp[k]||0)/30))+1;};o.up={thron:4,halle:Math.min(3,ol('hau')-1),turm:Math.min(3,ol('kla')-1),bib:Math.min(3,Math.floor((o.books||[]).length/3)),garten:Math.min(3,ol('kra')-1),hof:0};}
  for(var k in d){if(o[k]===undefined)o[k]=d[k];}
- ['look','xp','wall','last','up','equip'].forEach(function(g){for(var k in d[g]){if(o[g][k]===undefined)o[g][k]=d[g][k];}});return o;};
+ /* Beschädigte Felder reparieren statt abstürzen: falscher Typ wird zum Standardwert, Zahlen als Text werden Zahlen. */
+ var fix=function(v,def){if(Array.isArray(def))return Array.isArray(v)?v:def;
+  if(def!==null&&typeof def==='object'){if(!v||typeof v!=='object'||Array.isArray(v))return def;for(var j in def)v[j]=fix(v[j],def[j]);return v;}
+  if(typeof def==='number'){var x=typeof v==='number'?v:parseFloat(v);return isFinite(x)?x:def;}
+  if(typeof def==='string')return typeof v==='string'?v:def;
+  if(typeof def==='boolean')return typeof v==='boolean'?v:!!v;return v;};
+ for(k in d)if(k!=='bosses')o[k]=fix(o[k],d[k]);
+ if(!Array.isArray(o.bosses))o.bosses=d.bosses;
+ o.bosses=o.bosses.filter(function(b){return b&&typeof b==='object';});o.bosses.forEach(function(b){b.dmg=fix(b.dmg,0);b.target=fix(b.target,1);});
+ o.log=o.log.filter(function(e){return e&&typeof e==='object'&&isFinite(e.t)&&KIND[e.k];});o.log.forEach(function(e){e.a=fix(e.a,1);e.x=fix(e.x,0);e.g=fix(e.g,0);});
+ return o;};
 /* Kürzt Verlauf und Ansturm-Liste vor dem Speichern. */
 OK.trim=function(S){if(S.log.length>400)S.log=S.log.slice(-400);if(S.raids.length>12)S.raids=S.raids.slice(-12);};
 
@@ -70,9 +80,11 @@ function dkey(t){var d=new Date(t);return d.getFullYear()+'-'+('0'+(d.getMonth()
 function weekStart(t){var d=new Date(t);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d.getTime();}
 /* Nächster Sonntag 20 Uhr strikt nach after. */
 function nextRaid(after){var d=new Date(after);d.setHours(20,0,0,0);d.setDate(d.getDate()+((7-d.getDay())%7));if(d.getTime()<=after)d.setDate(d.getDate()+7);return d.getTime();}
+/* Ansturm eine Kalenderwoche vor t (gleiche Uhrzeit, richtig über Sommer- und Winterzeit). */
+function prevWeek(t){var d=new Date(t);d.setDate(d.getDate()-7);return d.getTime();}
 /* Ende des Tages eines Datums JJJJ-MM-TT (Zeitlimit einer Eroberung). */
 function dateEnd(s){return new Date(s+'T23:59:59').getTime();}
-OK.eff=eff;OK.since=since;OK.dkey=dkey;OK.weekStart=weekStart;OK.nextRaid=nextRaid;OK.dateEnd=dateEnd;
+OK.eff=eff;OK.since=since;OK.dkey=dkey;OK.weekStart=weekStart;OK.nextRaid=nextRaid;OK.prevWeek=prevWeek;OK.dateEnd=dateEnd;
 
 /* ---------- Stufen ---------- */
 function lvl(x){return Math.floor(Math.sqrt(x/30))+1;}
@@ -93,9 +105,14 @@ OK.choreDue=function(S,c,now){return c.d-since(S,S.last[c.k],now);};
 
 /* ---------- Auswertungen ---------- */
 OK.inWeek=function(S,k,now){var w=weekStart(now);return S.log.filter(function(e){return e.t>=w&&(k.indexOf(e.k)>=0);});};
-OK.pianoDays=function(S,now){var o={};OK.inWeek(S,['piano'],now).forEach(function(e){o[dkey(e.t)]=1;});return Object.keys(o).length;};
+/* Tage dieser Woche mit mindestens 15 Minuten Klang-Magie. */
+OK.pianoDays=function(S,now){var o={},n=0,k;OK.inWeek(S,['piano'],now).forEach(function(e){k=dkey(e.t);o[k]=(o[k]||0)+e.a;});for(k in o)if(o[k]>=15)n++;return n;};
 OK.monthKm=function(S,now){var d=new Date(now);return S.log.reduce(function(s,e){var x=new Date(e.t);return s+(e.k==='run'&&x.getMonth()===d.getMonth()&&x.getFullYear()===d.getFullYear()?e.a:0);},0);};
 OK.todayXp=function(S,s,now){var k=dkey(now);return S.log.reduce(function(a,e){return a+(e.s===s&&dkey(e.t)===k?e.x:0);},0);};
+/* Ruhm von heute aus bestimmten Routinen (Leselimit ohne Buch vollendet). */
+OK.todayXpOf=function(S,kinds,now){var k=dkey(now);return S.log.reduce(function(a,e){return a+(kinds.indexOf(e.k)>=0&&dkey(e.t)===k?e.x:0);},0);};
+/* Wurde die Routine heute schon eingetragen? */
+OK.doneToday=function(S,k,now){var d=dkey(now);return S.log.some(function(e){return e.k===k&&dkey(e.t)===d;});};
 
 /* ---------- Gold, Ausrüstung, Tränke ---------- */
 function own(S,id){return S.inv.indexOf(id)>=0;}
@@ -103,7 +120,7 @@ function eqBonus(S,k){var s=0;['waffe','ruestung','talisman'].forEach(function(s
  S.inv.forEach(function(id){var it=ITEMS[id];if(it&&(it.sl==='trophae'||it.sl==='moebel'))s+=it.b[k]||0;});return s;}
 OK.own=own;OK.eqBonus=eqBonus;
 OK.buffOn=function(S,now){return S.buffUntil>now;};
-/* Goldbereich einer Routine für Boni (Putzaufgaben und Wäsche zählen als Haushalt, Buch als Lesen). */
+/* Goldbereich einer Routine für Boni (Putzaufgaben und Wäsche zählen als Burgpflege, Buch als Schriften). */
 OK.goldCat=function(k){return {run:'run',gym:'gym',piano:'piano',water:'water',read:'read',book:'read'}[k]||'home';};
 OK.goldMul=function(S,k,now){return (OK.buffOn(S,now)?1.5:1)*(1+eqBonus(S,'gold_'+OK.goldCat(k))+eqBonus(S,'gold'));};
 OK.potPrice=function(S){return Math.max(15,40-3*(lvl(S.xp.kra)-1));};
@@ -114,29 +131,35 @@ OK.heroTier=function(S){var id=S.equip.ruestung;return id&&ITEMS[id]&&ITEMS[id].
 
 /* ---------- Einträge ---------- */
 /* Trägt eine Routine ein. Ergebnis {ok, err, k, x (Ruhm), g (Gold), before, after (Fertigkeitsstufe)}.
-   err: 'rest' (Rast aktiv), 'km', 'min' (ungültige Menge). */
+   err: 'rest' (Rast aktiv), 'km', 'min' (ungültige Menge), 'today' (heute schon eingetragen).
+   Kampftraining, Bewässern und jede Putzaufgabe zählen einmal pro Tag. */
+OK.ONCE=['gym','water'].concat(CHORES.map(function(c){return c.k;}));
 OK.logEntry=function(S,k,a,now,title){
  if(S.rest)return{ok:false,err:'rest'};
  var K=KIND[k];if(!K)return{ok:false,err:'kind'};
+ a=typeof a==='number'?a:parseFloat(a);
+ if(OK.ONCE.indexOf(k)>=0&&OK.doneToday(S,k,now))return{ok:false,err:'today'};
  var td=OK.todayXp(S,K.s,now),x=0;
  if(k==='run'){if(!(a>0)||a>100)return{ok:false,err:'km'};x=Math.min(Math.round(a*12),Math.max(0,200-td));}
  else if(k==='gym'){a=1;x=td>=50?0:50;}
  else if(k==='piano'){if(!(a>0)||a>600)return{ok:false,err:'min'};x=Math.min(Math.round(a*2),Math.max(0,80-td));}
  else if(k==='water'){a=1;x=td>=25?0:25;}
  else if(k==='waesche'){a=1;x=Math.min(15,Math.max(0,150-td));}
- else if(k==='read'){if(!(a>0)||a>600)return{ok:false,err:'min'};x=Math.min(Math.round(a),Math.max(0,60-td));}
+ else if(k==='read'){if(!(a>0)||a>600)return{ok:false,err:'min'};x=Math.min(Math.round(a),Math.max(0,60-OK.todayXpOf(S,['read'],now)));}
  else if(k==='book'){a=1;x=80;}
  else{a=1;x=Math.min(30,Math.max(0,150-td));}
  var g=Math.round(x/5*OK.goldMul(S,k,now)),before=lvl(S.xp[K.s]),hits=[];
  S.xp[K.s]+=x;S.gold+=g;
- if(K.area)S.bosses.forEach(function(b){if(!b.done&&b.area===K.area){b.dmg+=a;hits.push(b.id);}});
+ if(K.area)S.bosses.forEach(function(b){if(!b.done&&b.area===K.area&&dkey(now)<=b.date){b.dmg+=a;hits.push(b.id);}});
  S.log.push({t:now,k:k,a:a,s:K.s,x:x,g:g,st:0,pl:S.last[k],b:hits,bf:0,po:0});S.last[k]=now;
  if(k==='book')S.books.push({t:now,n:String(title||'').slice(0,60)});
  return{ok:true,k:k,x:x,g:g,before:before,after:lvl(S.xp[K.s])};};
 /* Nimmt den Eintrag mit Zeitstempel t zurück. */
 OK.undoEntry=function(S,t){var i,e=null;for(i=S.log.length-1;i>=0;i--){if(S.log[i].t===t){e=S.log[i];break;}}if(!e)return false;
  S.log.splice(i,1);S.xp[e.s]=Math.max(0,S.xp[e.s]-e.x);S.gold=Math.max(0,S.gold-(e.g!==undefined?e.g:(e.st||0)*5));if(e.po)S.potions=Math.max(0,S.potions-1);
- if(S.last[e.k]===e.t){var lt=0;S.log.forEach(function(o){if(o.k===e.k&&o.t>lt)lt=o.t;});S.last[e.k]=lt||e.pl;}
+ /* War es der neueste Eintrag dieser Routine, gilt wieder der vorherige (auch wenn eine Rast S.last verschoben hat). */
+ var newest=!S.log.some(function(o){return o.k===e.k&&o.t>e.t;});
+ if(newest){var lt=0;S.log.forEach(function(o){if(o.k===e.k&&o.t>lt)lt=o.t;});S.last[e.k]=lt||e.pl||0;}
  if(e.k==='book'){for(i=S.books.length-1;i>=0;i--){if(S.books[i].t===e.t){S.books.splice(i,1);break;}}}
  (e.b||[]).forEach(function(id){S.bosses.forEach(function(b){if(b.id===id)b.dmg=Math.max(0,b.dmg-e.a);});});
  return true;};
@@ -144,8 +167,12 @@ OK.undoEntry=function(S,t){var i,e=null;for(i=S.log.length-1;i>=0;i--){if(S.log[
 OK.undoLast=function(S,now){var e=S.log[S.log.length-1];if(!e||dkey(e.t)!==dkey(now))return false;return OK.undoEntry(S,e.t);};
 
 /* ---------- Rast ---------- */
-/* Beginnt oder beendet die Rast. Beim Beenden werden alle Timer um die Rastdauer verschoben. Ergebnis: true = Rast läuft jetzt. */
-OK.toggleRest=function(S,now){if(!S.rest){S.rest=now;return true;}var dur=now-S.rest;for(var k in S.last){if(S.last[k])S.last[k]+=dur;}S.lastRaid+=dur;S.rest=0;return false;};
+/* Beginnt oder beendet die Rast. Beim Beenden werden alle Zeitpunkte um die Rastdauer verschoben. Ergebnis: true = Rast läuft jetzt. */
+/* Der Ansturm ist eingefroren: Die Restzeit bis zum nächsten Ansturm bleibt erhalten (raidDue). Sonntage während der Rast entfallen. */
+OK.toggleRest=function(S,now){if(!S.rest){S.rest=now;return true;}var dur=now-S.rest,due=OK.raidDue(S);for(var k in S.last){if(S.last[k])S.last[k]+=dur;}
+ S.raidDue=due+dur;while(nextRaid(S.lastRaid)<=now)S.lastRaid=nextRaid(S.lastRaid);S.rest=0;return false;};
+/* Zeitpunkt des nächsten Ansturms: Sonntag 20 Uhr, nach einer Rast der verschobene Termin. */
+OK.raidDue=function(S){return S.raidDue>S.lastRaid?S.raidDue:nextRaid(S.lastRaid);};
 
 /* ---------- Mauer und Ausbau ---------- */
 OK.repairWall=function(S){if(S.wall.dmg>0&&S.gold>=15){S.gold-=15;S.wall.dmg--;return true;}return false;};
@@ -164,7 +191,7 @@ OK.lootRoll=function(S,src,now,rng){rng=rng||Math.random;var got=[],gold=0,pick=
   var sl=ITEMS[id].sl;if((sl==='waffe'||sl==='ruestung'||sl==='talisman')&&!S.equip[sl])S.equip[sl]=id;};
  var r=rng();
  if(src==='raid'){if(r<0.35)pick(r<0.0175?2:r<0.105?1:0);}
- else{pick(rng()<0.4?2:1,['waffe','ruestung','talisman','moebel']);pick(rng()<0.3?2:rng()<0.6?1:0,['trophae']);}
+ else{pick(rng()<0.4?2:1,['waffe','ruestung','talisman']);pick(rng()<0.3?2:rng()<0.6?1:0,['trophae']);}
  S.gold+=gold;var e={t:now,src:src,items:got,gold:gold};S.loot.push(e);if(S.loot.length>20)S.loot=S.loot.slice(-20);
  return e;};
 OK.lootText=function(e){return e.items.map(function(id){return ITEMS[id].n+' ('+RAR[ITEMS[id].r]+')';}).concat(e.gold?[e.gold+' Gold']:[]).join(', ');};
@@ -172,11 +199,13 @@ OK.lootText=function(e){return e.items.map(function(id){return ITEMS[id].n+' ('+
 /* ---------- Ansturm der Horde ---------- */
 OK.raidAtk=function(S){return Math.min(150,40+2*S.raidN);};
 /* Bereitschaft für den nächsten Ansturm. */
-OK.defNow=function(S,now){var nr=nextRaid(S.lastRaid),n=S.log.filter(function(e){return e.t>nr-7*DAY&&e.t<=nr;}).length,m=OK.moder(S,now),eq=eqBonus(S,'def');
+/* Zählt die Einträge mit Ruhm in der Woche vor dem Ansturm nr. */
+OK.raidEntries=function(S,nr){var p=prevWeek(nr);return S.log.filter(function(e){return e.t>p&&e.t<=nr&&e.x>0;}).length;};
+OK.defNow=function(S,now){var nr=OK.raidDue(S),n=OK.raidEntries(S,nr),m=OK.moder(S,now),eq=eqBonus(S,'def');
  return{nr:nr,n:n,m:m,eq:eq,def:S.wall.lvl*10+n*4-m*5-S.wall.dmg*5+eq,atk:OK.raidAtk(S)};};
 /* Rechnet alle fälligen Anstürme bis now nach (höchstens 8). Ergebnis {n, last}: Anzahl und letzter Ansturm. */
-OK.resolveRaids=function(S,now,rng){var res={n:0,last:null};if(S.rest)return res;var nr=nextRaid(S.lastRaid);
- while(nr<=now&&res.n<8){var c=S.log.filter(function(e){return e.t>nr-7*DAY&&e.t<=nr;}).length;
+OK.resolveRaids=function(S,now,rng){var res={n:0,last:null};if(S.rest)return res;var nr=OK.raidDue(S);
+ while(nr<=now&&res.n<8){var c=OK.raidEntries(S,nr);S.raidDue=0;
   var def=S.wall.lvl*10+c*4-OK.moder(S,now)*5-S.wall.dmg*5+eqBonus(S,'def'),atk=OK.raidAtk(S),win=def>=atk,r={t:nr,win:win,def:def,atk:atk};S.raidN++;
   if(win){S.gold+=20;r.loot=OK.lootRoll(S,'raid',now,rng);}else{S.wall.dmg=Math.min(5,S.wall.dmg+1);}
   S.raids.push({t:nr,win:win,def:def,atk:atk});S.lastRaid=nr;nr=nextRaid(nr);res.n++;res.last=r;}
@@ -187,8 +216,10 @@ OK.resolveRaids=function(S,now,rng){var res={n:0,last:null};if(S.rest)return res
 OK.addBoss=function(S,b,now){if(!b.name||!b.date||!(b.target>0))return null;var o={id:'b'+now,name:b.name,goal:b.goal||'',area:b.area,date:b.date,target:b.target,dmg:0,done:false,won:false,start:now};S.bosses.push(o);return o;};
 /* Abschliessen ist ab dem Tag des Zeitlimits erlaubt. */
 OK.bossReady=function(b,now){return dkey(now)>=b.date;};
+/* Titel Eroberer: mindestens eine Eroberung gewonnen. */
+OK.bossWon=function(S){return S.bosses.some(function(b){return b.done&&b.won;});};
 /* Schliesst eine Eroberung ab. Ergebnis {won, loot} oder null. */
-OK.finishBoss=function(S,id,now,rng){var res=null;S.bosses.forEach(function(b){if(b.id===id&&!b.done){b.done=true;b.won=b.dmg>=b.target;res={won:b.won,boss:b,loot:null};if(b.won){S.gold+=150;res.loot=OK.lootRoll(S,'boss',now,rng);}}});return res;};
+OK.finishBoss=function(S,id,now,rng){var res=null;S.bosses.forEach(function(b){if(b.id===id&&!b.done&&OK.bossReady(b,now)){b.done=true;b.won=b.dmg>=b.target;res={won:b.won,boss:b,loot:null};if(b.won){S.gold+=150;res.loot=OK.lootRoll(S,'boss',now,rng);}}});return res;};
 
 /* ---------- Spielstand-Vorlagen (Debug-Panel und Tests) ---------- */
 /* Fester Zufall, damit Vorlagen immer gleich aussehen. */

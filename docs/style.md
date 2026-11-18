@@ -109,10 +109,14 @@ Eszett (immer «ss»), keine Gedankenstriche.
 | Joggen             | Ausdauertraining      |
 | Gym / Boxen        | Kampftraining         |
 | Pflanzen giessen   | Garten bewässern      |
-| Putzen             | Burgküche schrubben, Waschraum scheuern, Halle fegen, Gemächer entstauben |
+| Putzen, Haushalt   | Burgpflege (als Oberbegriff), einzeln: Burgküche schrubben, Waschraum scheuern, Halle fegen, Gemächer entstauben |
 | Bettwäsche         | Lager frisch beziehen |
 | Wäsche             | Gewänder waschen      |
-| Lesen              | Schriften studieren   |
+| Lesen              | Schriften studieren, als Bereich Schriften |
+| Laufen, Läufe      | Ausdauertraining      |
+| Giessen            | Garten bewässern      |
+| Timer, pausieren   | Die Zeit ruht         |
+| Fundstücke         | Beutestücke           |
 | Ruhetag            | Rast am Lagerfeuer    |
 | Wochenangriff      | Ansturm der Horde     |
 | Punkte / XP        | Ruhm                  |

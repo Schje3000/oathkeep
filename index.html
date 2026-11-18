@@ -244,7 +244,7 @@ function monthKm(){return OK.monthKm(S,now());}
 function todayXp(s){return OK.todayXp(S,s,now());}
 function num(n){return (Math.round(n*10)/10).toLocaleString('de-CH');}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function bossHasWon(){return S.bosses.some(function(b){return b.done;});}
+function bossHasWon(){return OK.bossWon(S);}
 function unlocked(o){if(!o[1])return true;if(o[1]==='boss')return bossHasWon();return lvl(S.xp[o[1]])>=o[2];}
 function unlockText(o){return o[1]==='boss'?o[2]:o[3];}
 
@@ -252,7 +252,7 @@ var toastT=null;
 function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(function(){t.style.display='none';},2600);}
 
 function logAct(k,a){var r=OK.logEntry(S,k,a,now(),k==='book'?ui.btitle:'');
- if(!r.ok){toast(r.err==='rest'?'Rast am Lagerfeuer aktiv. Beende sie zuerst.':r.err==='km'?'Bitte Kilometer eingeben.':'Bitte Minuten eingeben.');return;}
+ if(!r.ok){toast(r.err==='rest'?'Rast am Lagerfeuer aktiv. Beende sie zuerst.':r.err==='today'?'Heute schon eingetragen.':r.err==='km'?'Bitte Kilometer eingeben.':'Bitte Minuten eingeben.');return;}
  if(k==='book')ui.btitle='';save();render();var K=KIND[k];
  toast(r.after>r.before?SK[K.s]+' erreicht Stufe '+r.after+'!':K.n+': +'+r.x+' Ruhm, +'+r.g+' Gold');}
 function undoEntry(t){if(!OK.undoEntry(S,t))return false;save();return true;}
@@ -283,7 +283,7 @@ function act(a){var p=a.split(':');
  if(a==='wall:up'){upBuy('burg');return;}
  if(a==='wall:up:alt'){var c=S.wall.lvl*150;if(S.wall.lvl<5&&S.gold>=c&&S.wall.dmg===0){S.gold-=c;S.wall.lvl++;save();render();toast('Mauer ausgebaut auf Stufe '+S.wall.lvl);}return;}
  if(a==='wall:fix'){if(OK.repairWall(S)){save();render();toast('Mauer repariert');}return;}
- if(a==='rest'){toast(OK.toggleRest(S,now())?'Rast am Lagerfeuer: Timer und Ansturm pausieren':'Rast beendet');save();render();return;}
+ if(a==='rest'){toast(OK.toggleRest(S,now())?'Rast am Lagerfeuer: Die Zeit ruht, die Horde wartet':'Rast beendet');save();render();return;}
  if(p[0]==='look'){S.look[p[1]]=p.slice(2).join(':');save();render();return;}
  if(a==='boss:add'){var f=function(id){return document.getElementById(id).value.trim();};var nm=f('bn'),gl=f('bg'),dt=f('bd'),tg=parseFloat(f('bt'));
   if(!nm||!dt||!(tg>0)){toast('Name, Datum und Zielwert ausfüllen.');return;}
@@ -298,19 +298,19 @@ function act(a){var p=a.split(':');
 function bar(cur,max,g){var p=max>0?Math.max(0,Math.min(100,cur/max*100)):0;return '<div class="bar'+(g?' g':'')+'"><i style="width:'+p+'%"></i></div>';}
 function due(c){var d=OK.choreDue(S,c,now());if(d>=1)return '<span class="s">fällig in '+Math.floor(d)+(Math.floor(d)===1?' Tag':' Tagen')+'</span>';if(d>=0)return '<span class="s" style="color:var(--gold)">heute fällig</span>';return '<span class="s warn">überfällig seit '+Math.ceil(-d)+(Math.ceil(-d)===1?' Tag':' Tagen')+'</span>';}
 
-function sheetStart(RI){var w=S.wall,cost=w.lvl*150,nr=nextRaid(S.lastRaid),lr=null,dn=0;
+function sheetStart(RI){var w=S.wall,cost=w.lvl*150,nr=OK.raidDue(S),lr=null,dn=0;
  var h=(w.dmg?'<div class="card"><div class="row">'+UI('schild')+'<div class="grow"><div class="t">Mauerschaden '+w.dmg+'</div><div class="s">Reparatur: 15 Gold pro Schaden. Ausbau erst ohne Schaden.</div></div><button class="b" data-act="wall:fix" '+(S.gold<15?'disabled':'')+'>Reparieren</button></div></div>':'')+vBuild('burg');
  h+='<div class="tiles">'+['garten','halle','turm','thron','hof','bib'].map(function(id){var r=RI[id];return '<button class="tile" data-act="room:'+id+'">'+UI({garten:'garten',halle:'besen',turm:'kristall',thron:'held',hof:'haus',bib:'buch'}[id])+'<b>'+r.k+'</b><span class="'+r.c+'">'+r.s+'</span></button>';}).join('')+'</div>';
  return h;}
 
 
-function vHist(kinds){var L=S.log.filter(function(e){return kinds.indexOf(e.k)>=0;}).slice(-6).reverse();
+function vHist(kinds){var L=S.log.filter(function(e){return kinds.indexOf(e.k)>=0;}).slice(-5).reverse();
  return '<div class="card"><div class="t">Zuletzt</div>'+(L.length?'<ul class="log tlog">'+L.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);
   return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'. '+KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'||e.k==='read'?' '+num(e.a)+' Min.':'')+', +'+e.x+' Ruhm'+(e.g?', +'+e.g+' Gold':'')+'</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>')+'</div>';}
 function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays(),pl=plant(),last=S.log.slice(-6).reverse();
  var C={hof:''},gw=inWeek(['run','gym']).length,tk=ui.ttab==='aus'?'run':'gym';
  C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
- (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Waffenübung und Faustkampf. Training diese Woche, Läufe mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
+ (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Waffenübung und Faustkampf. Training diese Woche, Ausdauertraining mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
  '<button class="b pri" data-act="log:gym">Kampftraining eintragen</button></div>'
  :'<div class="card"><div class="t">Ausdauertraining</div><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
  '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Lauf eintragen</button></div></div>')+
@@ -318,7 +318,7 @@ function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays()
  C.turm='<div class="card"><div class="t">Klang-Magie</div><div class="s">Diese Woche: '+pd+' von 5 Tagen, je mindestens 15 Minuten</div>'+bar(pd,5)+
  '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="min" value="'+esc(ui.min)+'"></label><div class="grow"></div><button class="b pri" data-act="log:piano">Übung eintragen</button></div></div>';
  C.garten='<div class="card"><div class="row"><div class="grow"><div class="t">Garten bewässern</div><div class="s">Garten: <span class="'+(pl?'warn':'ok')+'">'+['frisch','welk','verdorrt','verrottet'][pl]+'</span>, Ziel 2 bis 3 Mal pro Woche</div></div><button class="b pri" data-act="log:water">Bewässert</button></div></div>';
- var h='<div class="card"><div class="t">Putzen</div>';
+ var h='<div class="card"><div class="t">Burgpflege</div>';
  CHORES.forEach(function(c){h+='<div class="row"><div class="grow"><div>'+c.n+'</div>'+due(c)+'</div><button class="b" data-act="log:'+c.k+'">Erledigt</button></div>';});
  h+='<div class="row"><div class="grow"><div>Gewänder waschen</div><span class="s">ohne festen Rhythmus</span></div><button class="b" data-act="log:waesche">Erledigt</button></div></div>';C.halle=h;
  var nb=S.books.length;C.bib='<div class="card"><div class="t">Bibliothek</div><div class="s">'+nb+(nb===1?' Buch':' Bücher')+' gelesen'+(nb?', zuletzt: '+esc(S.books.slice(-3).reverse().map(function(b){return b.n||'ohne Titel';}).join(', ')):'')+'</div>'+
@@ -327,7 +327,7 @@ function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays()
  C.log='<div class="card"><div class="t">Verlauf</div>'+(last.length?'<ul class="log">'+last.map(function(e){var d=new Date(e.t);return '<li>'+d.getDate()+'.'+(d.getMonth()+1)+'. '+KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'?' '+num(e.a)+' Min.':'')+', +'+e.x+' Ruhm</li>';}).join('')+'</ul><button class="b" data-act="undo">Letzten Eintrag zurücknehmen</button>':'<div class="s">Noch keine Einträge.</div>')+'</div>';
  var tro=S.bosses.filter(function(b){return b.done;}),un=0,tot=0,g;
  for(g in LOOK)LOOK[g].forEach(function(o){if(o[1]){tot++;if(unlocked(o))un++;}});
- var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;C.thron+='<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Ausrüstung und Trophäen</div><div class="s">'+['waffe','ruestung','talisman'].map(function(sl){var id=S.equip[sl];return SLOTN[sl]+': '+(id?ITEMS[id].n:'keine');}).join(', ')+'. '+ntr+(ntr===1?' Trophäe':' Trophäen')+', '+S.inv.length+' Fundstücke.</div></div></div><button class="b" data-act="tab:held">Ausrüstung ansehen</button></div>';
+ var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;C.thron+='<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Ausrüstung und Trophäen</div><div class="s">'+['waffe','ruestung','talisman'].map(function(sl){var id=S.equip[sl];return SLOTN[sl]+': '+(id?ITEMS[id].n:'keine');}).join(', ')+'. '+ntr+(ntr===1?' Trophäe':' Trophäen')+', '+S.inv.length+' Beutestücke.</div></div></div><button class="b" data-act="tab:held">Ausrüstung ansehen</button></div>';
  var bl=Math.max(0,Math.ceil((S.buffUntil-now())/3600000));C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">Ein Trank gibt 24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold, mit mehr Kräuterkunde weniger.</div></div></div>'+
  '<div class="row"><button class="b grow" data-act="potion:buy" '+(S.gold>=potPrice()&&S.potions<9?'':'disabled')+'>Brauen</button><button class="b pri grow" data-act="potion" '+(S.potions>0&&!buffOn()?'':'disabled')+'>'+(buffOn()?'Wirkt noch '+bl+' Std.':'Trinken')+'</button></div></div>';
  var HK={halle:CHORES.map(function(c){return c.k;}).concat(['waesche']),turm:['piano'],garten:['water'],bib:['read','book']};
@@ -358,7 +358,7 @@ function vMap(){var today=dkey(OK.now()),now=OK.now(),h='<div class="tabs"><butt
    '<div class="row"><label>Zielwert ('+A.u+')<input type="number" inputmode="decimal" min="1" data-boss="'+b.id+'" value="'+b.target+'"></label><div class="grow"></div><button class="b pri" data-act="boss:hit:'+b.id+'" '+(rdy?'':'disabled')+'>Abschliessen</button></div>';}
   h+='<button class="b" data-act="boss:del:'+b.id+'">'+(ui.confirm==='boss:del:'+b.id?'Wirklich löschen?':'Eroberung löschen')+'</button></div>';});
  h+='<div class="card"><div class="t">Neue Eroberung</div><label>Name<input id="bn" maxlength="40" placeholder="zum Beispiel Der Notenwurm"></label><label>Ziel<input id="bg" maxlength="60" placeholder="zum Beispiel ein Stück auswendig vorspielen"></label>'+
- '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Klang-Magie (Minuten)</option><option value="home">Haushalt (Aufgaben)</option><option value="read">Lesen (Bücher)</option></select></label>'+
+ '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Klang-Magie (Minuten)</option><option value="home">Burgpflege (Aufgaben)</option><option value="read">Schriften (Bücher)</option></select></label>'+
  '<div class="row"><label class="grow">Zeitlimit<input id="bd" type="date"></label><label>Zielwert<input id="bt" type="number" inputmode="decimal" min="1"></label></div><button class="b pri" data-act="boss:add">Eroberung anlegen</button></div>';
  return h;}
 function icon(rows,pal){var o='<svg viewBox="0 0 8 8" width="30" height="30" shape-rendering="crispEdges" aria-hidden="true">';rows.forEach(function(r,y){for(var x=0;x<8;x++){if(r[x]!=='.')o+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+pal[r[x]]+'"/>';}});return o+'</svg>';}
@@ -369,7 +369,7 @@ var IC={stone:icon(['........','..aaa...','.aabba..','.abbbaa.','aabbbbba','abbb
  trophy:icon(['.aaaaaa.','a.aaaa.a','a.aaaa.a','.aaaaaa.','..aaaa..','...aa...','..aaaa..','.bbbbbb.'],{a:'#E8C860',b:'#7a5230'}),
  gear:icon(['..aaaa..','.aaaaaa.','.abbbba.','.a.bb.a.','.aabbaa.','.aaaaaa.','..a..a..','........'],{a:'#aeb8bd',b:'#16261A'})};
 function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" width="144" height="128" role="img" aria-label="Vorschau deines Helden"></canvas>'+
- '<div class="s" style="text-align:center">Stufe '+charLvl()+', '+(bossHasWon()?'Eroberer':'noch ohne Titel')+(lvl(S.xp.wis)>=6?', Weiser':lvl(S.xp.wis)>=3?', Gelehrter':'')+', Zustand: <span class="'+(f===0?'ok':f===1?'':'warn')+'">'+['kräftig','müde','geschwächt'][f]+'</span></div>'+
+ '<div class="s" style="text-align:center">Stufe '+charLvl()+', '+([bossHasWon()?'Eroberer':'',lvl(S.xp.wis)>=6?'Weiser':lvl(S.xp.wis)>=3?'Gelehrter':''].filter(String).join(', ')||'noch ohne Titel')+', Zustand: <span class="'+(f===0?'ok':f===1?'':'warn')+'">'+['kräftig','müde','geschwächt'][f]+'</span></div>'+
  '<label>Name<input data-name maxlength="24" value="'+esc(S.name)+'"></label>';
  h+='</div><div class="card"><div class="t">Ausrüstung</div><div class="s">Rüstung zeigt sich am Helden. Neue Stücke bringen Ansturm und Eroberungen.</div>';
  ['ruestung','waffe','talisman'].forEach(function(sl){var id=S.equip[sl],it=id?ITEMS[id]:null,list=S.inv.filter(function(x){return ITEMS[x]&&ITEMS[x].sl===sl;});
@@ -385,7 +385,7 @@ function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" wid
  h+='<div class="card">';
  h+='</div>';
  h+=vRout().log;
- h+='<div class="card"><div class="t">Rast am Lagerfeuer</div><div class="s">Bei Krankheit oder Ferien: Timer und Ansturm pausieren, es gibt keinen Ruhm.</div><button class="b'+(S.rest?' pri':'')+'" data-act="rest">'+(S.rest?'Rast beenden':'Rast beginnen')+'</button></div>';
+ h+='<div class="card"><div class="t">Rast am Lagerfeuer</div><div class="s">Bei Krankheit oder Ferien: Die Zeit ruht und die Horde wartet. Solange du rastest, gibt es keinen Ruhm.</div><button class="b'+(S.rest?' pri':'')+'" data-act="rest">'+(S.rest?'Rast beenden':'Rast beginnen')+'</button></div>';
  h+='<div class="card"><div class="t">Fertigkeiten</div>';
  for(var k in SK){var p=lvlProg(S.xp[k]);h+='<div><div class="row" style="margin-bottom:6px"><div class="grow">'+SK[k]+'</div><div class="s">Stufe '+p.l+', '+p.cur+' / '+p.need+'</div></div>'+bar(p.cur,p.need)+'</div>';}
  h+='</div><div class="card"><div class="t">Einstellungen</div><div class="row"><label>Ausdauertraining pro Monat (km)<input type="number" inputmode="decimal" min="1" data-goal value="'+S.runGoal+'"></label></div>'+
@@ -398,9 +398,9 @@ function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRo
  var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg">'+UI('zurueck')+'Burg</button>';
  var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
  var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
- if(home){hud='<button class="chip map'+(0?'':'')+'" data-act="tab:boss" aria-label="Weltkarte">'+UI('karte')+'<span>'+(S.rest?'Rast':Math.max(0,Math.ceil((nextRaid(S.lastRaid)-now())/DAY))+' T')+'</span></button><span class="grow"></span>'+gc+hero;
+ if(home){hud='<button class="chip map'+(0?'':'')+'" data-act="tab:boss" aria-label="Weltkarte">'+UI('karte')+'<span>'+(S.rest?'Rast':Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY))+' T')+'</span></button><span class="grow"></span>'+gc+hero;
   var act=S.bosses.filter(function(b){return !b.done;}).sort(function(a,b){return a.date<b.date?-1:1;})[0],dl=act?Math.ceil((OK.dateEnd(act.date)-now())/DAY):0;
-  var dn=Math.max(0,Math.ceil((nextRaid(S.lastRaid)-now())/DAY));
+  var dn=Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY));
   fl='';
   sh=sheetStart(RI);}
  else if(inRoom){hud=back+'<span class="chip">'+cur.n+'<span class="pill">'+upLvl(ui.room)+'/8</span></span>';
@@ -578,14 +578,14 @@ function houseS(R,x,w,s){var y=104,h=70,b='#6b4526',i,k;R(x,y,w,h,'#d9c9a0');for
 function stallS(R,x,y,col){var k;R(x,y,2,40,'#6b4526');R(x+44,y,2,40,'#6b4526');for(k=0;k<8;k++){R(x-2+k*6.2,y-5,7,10,k%2?col:'#EDF0D8');R(x-1+k*6.2,y+5,5,2,k%2?col:'#EDF0D8');}R(x-2,y-6,50,2,shade(col,-0.3));
  R(x-1,y+24,48,4,'#9a6a3e');R(x-1,y+28,48,12,'#7a5230');R(x-1,y+28,48,1,'#5B3A22');for(k=0;k<7;k++)disc(R,x+4+k*6,y+21,2,['#c93a2e','#6fa544','#E8C860'][k%3]);}
 function caseS(R,x,y,w,h){R(x,y,w,h,'#5B3A22');R(x+3,y+3,w-6,h-3,'#241710');R(x-2,y-3,w+4,4,'#7a5230');R(x-2,y-3,w+4,1,'#9a6a3e');R(x,y,1,h,'#7a5230');}
-function ROOMINFO(){var f=fit(),m=moder(),pl=plant(),tw=tower(),hp=happy(),w=S.wall,nb=S.books.length,nv=3+w.lvl;
+function ROOMINFO(){var f=fit(),m=moder(),pl=plant(),tw=tower(),hp=happy(),w=S.wall,nb=S.books.length,nv=ROOMS2.hof&&ROOMS2.hof.actors?ROOMS2.hof.actors().length:2;
  return{mauer:{k:'MAUER',n:'Aussenansicht',l:w.lvl,c:w.dmg?'warn':'ok',s:w.dmg?'Schaden '+w.dmg:'intakt',d:'Mit Gold baust du die Burg aus. Schaden entsteht, wenn ein Ansturm der Horde durchkommt.'},
   garten:{k:'GARTEN',n:'Burggarten',l:lvl(S.xp.kra),c:pl?'warn':'ok',s:['frisch','welk','verdorrt','verrottet'][pl],d:'Ohne Wasser verfallen die Pflanzen. Neue Beete und mehr baust du mit Gold.'},
   halle:{k:'MODER',n:'Innenraum',l:lvl(S.xp.hau),c:m?'warn':'ok',s:m?m+' überfällig':'sauber',d:'Jede überfällige Putzaufgabe bringt Moder in die Halle. Einrichtung baust du mit Gold.'},
   turm:{k:'ZAUBERTURM',n:'Zauberturm',l:lvl(S.xp.kla),c:tw===2?'ok':tw?'':'warn',s:['erloschen','glimmt','leuchtet'][tw],d:'Nach dem Üben schweben Noten durch den Turm. Nach Tagen ohne Übung wird es dunkel.'},
   thron:{k:'HELD',n:'Thronsaal',l:charLvl(),c:f===0?'ok':f===1?'':'warn',s:['kräftig','müde','geschwächt'][f],d:'Dein Held im Thronsaal. Ausbauten kaufst du mit Gold, Trophäen bringen Ansturm und Eroberungen.'},
   hof:{k:'BEWOHNER',n:'Innenhof',l:w.lvl,c:hp?'ok':'',s:hp?'zufrieden':'besorgt',d:nv+' Bewohner leben in der Burg. Sie sind zufrieden, wenn Mauer, Garten und Halle in Ordnung sind.'},
-  bib:{k:'BIBLIOTHEK',n:'Bibliothek',l:lvl(S.xp.wis),c:'',s:nb+(nb===1?' Buch':' Bücher'),d:'Lesen bringt Wissen und Gold. Regale und mehr baust du mit Gold.'}};}
+  bib:{k:'BIBLIOTHEK',n:'Bibliothek',l:lvl(S.xp.wis),c:'',s:nb+(nb===1?' Buch':' Bücher'),d:'Schriften bringen Wissen und Gold. Regale und mehr baust du mit Gold.'}};}
 var ROOMS={
 hof:function(){var L=Math.min(5,S.wall.lvl),hp=happy(),st=['#857c68','#8f8672','#9A917A','#a59c85','#b0a890'][L-1];return{sig:'h'+L,st:function(R){var i,x,y,k;
  R(0,0,360,44,'#4477a3');R(0,44,360,40,'#6798bb');cloud(R,70,30,0.8);cloud(R,236,22,0.6);
@@ -741,7 +741,7 @@ ROOMS.karte=function(){var bs=S.bosses.slice(0,5),C=[120,168],K=[286,66];return{
  [[276,62],[288,56],[298,66]].forEach(function(q){for(k=0;k<8;k++)R(q[0]-k,q[1]+k,k*2+1,1,k%3===0?'#7a2a1e':'#a8322a');R(q[0],q[1]+4,1,4,'#2a1c12');R(q[0]-8,q[1]+8,17,1,'#5a3d22');});
  R(306,46,1,16,'#5a3d22');R(307,46,8,6,'#16141c');R(309,48,2,2,'#EDF0D8');R(312,48,2,2,'#EDF0D8');
  R(40,250,1,22,'#5a3d22');R(29,261,23,1,'#5a3d22');R(38,248,5,2,'#a8322a');R(39,246,3,2,'#a8322a');for(k=0;k<5;k++){R(34+k,255+k,1,1,'#5a3d22');R(46-k,255+k,1,1,'#5a3d22');}
-},dy:function(R,c,t){var i,now=OK.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,K,C);
+},dy:function(R,c,t){var i,now=OK.now(),nr=OK.raidDue(S),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,K,C);
  for(i=0;i<8;i++){var yy=120+Math.round(Math.sin(t/3+i/2)*1);R(120+i,138+Math.round(Math.sin(t/3+i/2)*1),1,5,'#3c8a34');}
  disc(R,p[0],p[1],7+(t%10<5?0:2),'rgba(168,50,42,.20)');R(p[0]-4,p[1]-2,3,4,'#a8322a');R(p[0],p[1]-3,3,5,'#7a2a1e');R(p[0]+4,p[1]-2,3,4,'#a8322a');R(p[0]+1,p[1]-9,1,7,'#2a1c12');R(p[0]+2,p[1]-9,4,3,'#16141c');
  bs.forEach(function(b,n){if(b.done)return;var P=BPOS[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)disc(R,P[0],P[1]-2,12,'rgba(232,200,96,.22)');});
@@ -803,7 +803,7 @@ var RAR=OK.RAR,RARC=['#cfc8b0','#7fb8ff','#d79bff'],SLOTN={waffe:'Waffe',ruestun
  ROOMN={halle:'Innenraum',garten:'Burggarten',thron:'Thronsaal',turm:'Zauberturm',hof:'Innenhof'};
 function itemIcon(id){var it=ITEMS[id];return it.img||('i_'+id);}
 function eqBonus(k){return OK.eqBonus(S,k);}
-function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Läufen',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Klang-Magie',gold_home:'Gold aus Haushalt',gold_water:'Gold aus Giessen',gold_read:'Gold aus Lesen'};
+function bonusText(b){var o=[],k,N={def:'Verteidigung',gold:'Gold aus allem',gold_run:'Gold aus Ausdauertraining',gold_gym:'Gold aus Kampftraining',gold_piano:'Gold aus Klang-Magie',gold_home:'Gold aus Burgpflege',gold_water:'Gold aus dem Garten',gold_read:'Gold aus Schriften'};
  for(k in b)o.push(k==='def'?'+'+b[k]+' '+N[k]:'+'+Math.round(b[k]*100)+' % '+N[k]);return o.join(', ')||'Schmuck für '+'den Raum';}
 function lootRoll(src){return OK.lootRoll(S,src,now());}
 var lootText=OK.lootText;
@@ -880,7 +880,7 @@ ROOMS2.karte={f:function(){return ['v_welt','mb0','mb1','mb2','mb3','m_lager','m
   S.bosses.slice(0,8).forEach(function(bo,n){var P=M.P[n];if(bo.done&&!bo.won)return;for(k=1;k<16;k++){q=pathPt(k/16,M.C,P);if(k%2)R(q[0],q[1]+oy,2,1,'#5a3d22');}
    wPut(x,bo.done?'m_dorf':'m_fahne',P[0],P[1]+oy+14);});
   wPut(x,'m_lager',M.K[0],M.K[1]+oy+14);wPut(x,'mb'+Math.min(3,Math.floor((S.wall.lvl-1)/2)),M.C[0],M.C[1]+oy+14);},
- dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=OK.now(),nr=nextRaid(S.lastRaid),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
+ dy:function(c,FY,H,t){var R=pen(c),oy=W.oy,M=WMAP,now=OK.now(),nr=OK.raidDue(S),f=S.rest?0:Math.max(0,Math.min(1,1-(nr-now)/(7*DAY)))*0.92,p=pathPt(f,M.K,M.C),i;
   if(f>0.05){var X=p[0],Y=p[1]+oy;wGlow(c,X,Y,10+(t%10<5?0:2),'rgba(168,50,42,.45)');R(X-4,Y-2,3,4,'#a8322a');R(X,Y-3,3,5,'#7a2a1e');R(X+4,Y-2,3,4,'#a8322a');R(X+1,Y-9,1,7,'#2a1c12');R(X+2,Y-9,4,3,'#16141c');}
   S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
   }};

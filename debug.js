@@ -24,7 +24,7 @@ function setState(o){S=o;ui.room='mauer';ui.tab='burg';ui.confirm='';save();rend
 function paint(){
  var h='<button class="dt" data-dbg="toggle" data-testid="debug-toggle" aria-expanded="'+open+'">'+(open?'Debug schliessen':'Debug')+'</button>';
  if(open){h='<div class="dp"><div class="dh">Debug</div>'+
-  '<div class="ds" data-testid="debug-time">Spielzeit: '+fmt(OK.now())+(OK.clock.offset?' (+'+days(OK.clock.offset)+' Tage)':'')+'<br>Nächster Ansturm: '+(S.rest?'pausiert (Rast)':fmt(OK.nextRaid(S.lastRaid)))+'</div>'+
+  '<div class="ds" data-testid="debug-time">Spielzeit: '+fmt(OK.now())+(OK.clock.offset?' (+'+days(OK.clock.offset)+' Tage)':'')+'<br>Nächster Ansturm: '+(S.rest?'pausiert (Rast)':fmt(OK.raidDue(S)))+'</div>'+
   '<div class="dh">Zeit vorspulen</div><div class="dg three">'+
    '<button class="db" data-dbg="day" data-testid="debug-time-day">+1 Tag</button>'+
    '<button class="db" data-dbg="week" data-testid="debug-time-week">+1 Woche</button>'+
@@ -38,7 +38,7 @@ box.addEventListener('click',function(e){var b=e.target.closest?e.target.closest
  if(a==='toggle'){open=!open;paint();return;}
  if(a==='day'){shift(OK.DAY);return;}
  if(a==='week'){shift(7*OK.DAY);return;}
- if(a==='raid'){if(S.rest){toast('Rast aktiv: kein Ansturm');return;}shift(OK.nextRaid(S.lastRaid)-OK.now()+60000);return;}
+ if(a==='raid'){if(S.rest){toast('Rast aktiv: kein Ansturm');return;}shift(OK.raidDue(S)-OK.now()+60000);return;}
  if(a.indexOf('preset:')===0){setState(OK.preset(a.slice(7),OK.now()));toast('Spielstand: '+NAMES[a.slice(7)]);return;}
  if(a==='reset'){OK.clock.offset=0;storeOffset();setState(OK.fresh(OK.now()));toast('Debug-Spielstand zurückgesetzt');return;}
  if(a==='clock'){OK.clock.offset=0;storeOffset();setState(S);return;}
