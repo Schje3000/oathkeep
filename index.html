@@ -892,21 +892,33 @@ ROOMS2.karte={f:function(){return ['v_welt','mb0','mb1','mb2','mb3','m_lager','m
    der Held läuft lane Pixel davor. Wandobjekte: y = Abstand ihrer Unterkante über T. */
 function kMat(s){return s<=2?0:s<=5?1:2;}
 var KIT={halle:{bgF:[402,406,404],lane:[24,32,20],top:[118,98,128],items:[
- {n:'teppich',v:3,s:2,x:164,k:'boden',dy:3},
+ {n:'teppich',s:2,x:164,k:'rug',w:124},
+ {n:'pfannen0',m:0,s:0,x:164,k:'wand',y:84},{n:'kraeuter0',m:0,s:0,x:104,k:'wand',y:96},
+ {n:'fenster1',m:1,s:0,x:44,k:'wand',y:122},{n:'pfannen1',m:1,s:0,x:164,k:'wand',y:66},
+ {n:'bild2',m:2,s:0,x:44,k:'wand',y:126},{n:'teller2',m:2,s:0,x:164,k:'wand',y:68},
  {n:'banner',v:2,s:3,x:164,k:'wand',y:118},
  {n:'fackel',v:2,s:4,x:100,k:'wand',y:96},{n:'fackel',v:2,s:4,x:226,k:'wand',y:96},
- {n:'leuchter',s:7,x:164,k:'decke',y:176},
+ {n:'leuchter',s:7,x:164,k:'decke',y:196},
  {n:'schrank',v:3,s:1,x:36,k:'boden'},
  {n:'ruestung',s:6,x:90,k:'boden'},
- {n:'kamin',v:3,s:0,x:276,k:'boden',up:1},
+ {n:'kamin',v:3,s:0,x:276,k:'boden'},
  {n:'faesser',s:5,x:324,k:'boden'},
- {n:'tisch',v:3,s:0,x:164,k:'boden'},
+ {n:'tisch',v:3,s:0,x:164,k:'boden',dy:3},
  {n:'katze',s:8,x:258,k:'boden',dy:2}],fire:[276,30]}};
 function kName(r,it,m){return 'k_'+r+'_'+it.n+(it.v===3?m:it.v===2?Math.max(1,m):'');}
-function kList(r){var s=S.up[r]||0,m=kMat(s),l=['k_'+r+'_bg'+m];KIT[r].items.forEach(function(it){if(s>=it.s)l.push(kName(r,it,m));});return l;}
+function kOn(it,s,m){return s>=it.s&&(it.m===undefined||it.m===m);}
+function kList(r){var s=S.up[r]||0,m=kMat(s),l=['k_'+r+'_bg'+m];KIT[r].items.forEach(function(it){if(kOn(it,s,m)&&it.k!=='rug')l.push(kName(r,it,m));});return l;}
+/* Läufer flach auf dem Boden, zwischen Wandfuss und Laufweg, leicht trapezförmig wie der Boden */
+var RUG=[['#8a6a44','#c9ad7c','#5e4428','#e3cf9f'],['#8e2a22','#b8372c','#5a1712','#e2b955'],['#7a1420','#a01d2c','#4a0a12','#f0cf6a']];
+function kRug(x,cx,w,T,lane,m){var c=RUG[m],h=Math.max(8,lane-10),y0=T-1,i,y,l,r;
+ for(i=0;i<h;i++){y=y0+i;var ins=Math.round((h-1-i)*0.35);l=Math.round(cx-w/2)+ins;r=Math.round(cx+w/2)-ins;
+  x.fillStyle=(i===0||i===h-1)?c[2]:(i===1||i===h-2)?c[3]:(m===0&&i%3===0)?c[0]:c[1];x.fillRect(l,y,r-l,1);
+  x.fillStyle=c[2];x.fillRect(l,y,1,1);x.fillRect(r-1,y,1,1);if(i>1&&i<h-2){x.fillStyle=c[3];x.fillRect(l+2,y,1,1);x.fillRect(r-3,y,1,1);}
+  if(i%2===0){x.fillStyle=c[3];x.fillRect(l-2,y,2,1);x.fillRect(r,y,2,1);}}
+ x.fillStyle='rgba(0,0,0,.18)';x.fillRect(Math.round(cx-w/2),y0+h,w,1);}
 function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||function(){return '';},
  st:function(x,FY,H){var K=KIT[r],s=S.up[r]||0,m=kMat(s),B=rBand(H,r),bg=wImg('k_'+r+'_bg'+m);B.oy=B.T-K.bgF[m];W.rb=B;W.fy=B.T;scPlace(x,bg,B,H);
-  K.items.forEach(function(it){if(s<it.s)return;var im=wImg(kName(r,it,m)),w=im.width,h=im.height,X=Math.round(it.x-w/2),Y;
+  K.items.forEach(function(it){if(!kOn(it,s,m))return;if(it.k==='rug'){kRug(x,it.x,it.w,B.T,K.lane[m],m);return;}var im=wImg(kName(r,it,m)),w=im.width,h=im.height,X=Math.round(it.x-w/2),Y;
    if(it.k==='boden')Y=B.T-h+(it.dy||0);else Y=B.T-it.y-h;
    var wt=B.oy+K.top[m];
    if(it.k==='decke'){var cy=wt;x.fillStyle='#2a2018';x.fillRect(it.x,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(it.x+1,cy,1,Y-cy+4);}
@@ -915,7 +927,7 @@ function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||fun
   if(o.st)o.st(x,B,H);},
  dy:function(c,FY,H,t){var B=W.rb||rBand(H,r),K=KIT[r],s=S.up[r]||0;
   if(K.fire)wGlow(c,K.fire[0],B.T-K.fire[1],30+(t%6<3?0:4),'rgba(255,170,70,.30)');
-  K.items.forEach(function(it){if(s>=it.s&&it.n==='fackel')wGlow(c,it.x,B.T-it.y-30,22+((t+it.x)%6<3?0:3),'rgba(255,190,90,.28)');});
+  K.items.forEach(function(it){if(kOn(it,s,kMat(s))&&it.n==='fackel')wGlow(c,it.x,B.T-it.y-30,22+((t+it.x)%6<3?0:3),'rgba(255,190,90,.28)');});
   if(o.dy)o.dy(c,B,H,t);}};}
 ROOMS2.halle=kRoom('halle',{sig:function(){return moder();},st:function(x,B,H){wModer(x,B.T,Math.min(H,B.T+40),moder());},
  dy:function(c,B,H,t){if(moder()>=3)creature(pen(c),80+Math.round(Math.sin(t/12)*14),B.T+8,t);}});
