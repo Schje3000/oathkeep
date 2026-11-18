@@ -71,7 +71,7 @@ function actorPaint(c,im,a,row,T){var col,flip=false;if(a.walk){col=2+Math.floor
  var X=Math.round(a.x),Y=T+a.lane;c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(X,Y-1,14,3,0,0,7);c.fill();
  c.save();c.translate(X,0);if(flip)c.scale(-1,1);c.drawImage(im,col*HC2,row*HC2,HC2,HC2,-HC2/2,Y-FOOT,HC2,HC2);c.restore();}
 function heroStep(room,T){var f=fit(),h=W.hero,key=room+(S.up[room]||0);
- if(!h||W.hroom!==key){W.hroom=key;h=W.hero={x:180,tx:180,face:'s',walk:false,wait:12,fr:0,lane:3,range:[150,110,70][f],w0:[14,24,36][f],w1:[30,40,50][f],slow:[1,2,3][f]};}
+ if(!h||W.hroom!==key){W.hroom=key;h=W.hero={x:180,tx:180,face:'s',walk:false,wait:12,fr:0,lane:KIT[room]?KIT[room].lane[kMat(S.up[room]||0)]:3,range:[150,110,70][f],w0:[14,24,36][f],w1:[30,40,50][f],slow:[1,2,3][f]};}
  actorStep(h,28,332,[2.2,1.3,0.8][f],!!S.rest);return h;}
 /* Bodenlinie je Szene (y der Füsse im Bild), gemessen mit tools/boden.py */
 var FLOOR={"bib0":465,"bib1":455,"bib2":460,"bib3":445,"bib4":445,"bib5":388,"bib6":460,"bib7":408,"bib8":450,"garten0":448,"garten1":420,"garten2":455,"garten3":398,"garten4":415,"garten5":428,"garten6":482,"garten7":432,"garten8":478,"halle0":420,"halle1":435,"halle2":410,"halle3":452,"halle4":436,"halle5":455,"halle6":405,"halle7":400,"halle8":333,"hof0":390,"hof1":414,"hof2":452,"hof3":440,"hof4":448,"hof5":438,"hof6":397,"hof7":435,"hof8":440,"thron0":435,"thron1":435,"thron2":435,"thron3":405,"thron4":420,"thron5":405,"thron6":400,"thron7":420,"thron8":470,"turm0":425,"turm1":440,"turm2":405,"turm3":440,"turm4":438,"turm5":430,"turm6":470,"turm7":425,"turm8":425};
@@ -79,7 +79,7 @@ var FLOOR={"bib0":465,"bib1":455,"bib2":460,"bib3":445,"bib4":445,"bib5":388,"bi
    knapp über der Holzleiste liegt. Oben fällt nur Decke oder Himmel weg. */
 var SC_H=512;
 function rImg(r){return 's_'+r+(S.up[r]||0);}
-function rBand(H,r){var hb=hudB()+4,vb=visB(H)-2,T=Math.round(Math.min(vb-22,H-40)),F=FLOOR[r+(S.up[r]||0)]||400;return{hb:hb,vb:vb,T:T,oy:T-F};}
+function rBand(H,r){var hb=hudB()+4,vb=visB(H)-2,ln=typeof KIT!=='undefined'&&KIT[r]?KIT[r].lane[kMat(S.up[r]||0)]:0,T=Math.round(Math.min(vb-22-ln-4,H-40-ln)),F=FLOOR[r+(S.up[r]||0)]||400;return{hb:hb,vb:vb,T:T,oy:T-F};}
 function scPlace(x,im,B,H){var oy=B.oy;if(oy>0){x.drawImage(im,0,0,360,4,0,0,360,oy);}x.drawImage(im,0,oy);var b=oy+SC_H;
  if(b<H){var g=x.createLinearGradient(0,b,0,H);g.addColorStop(0,'rgba(20,14,9,.85)');g.addColorStop(1,'#140e09');x.fillStyle=g;x.fillRect(0,b,360,H-b);}}
 function scFill(x,im,H){scPlace(x,im,{oy:0},H);}
@@ -135,6 +135,41 @@ ROOMS2.karte={f:function(){return ['v_welt','mb0','mb1','mb2','mb3','m_lager','m
   S.bosses.slice(0,8).forEach(function(b,n){if(b.done)return;var P=M.P[n],dl=(OK.dateEnd(b.date)-now)/DAY,sp=dl<=7?4:12;if(t%sp<sp/2)wGlow(c,P[0],P[1]+oy,18,'rgba(232,200,96,.35)');});
   }};
 
+
+/* Bühnenbaukasten (Seitenansicht): Hintergrund je Material ohne Möbel, Objekte an festen Plätzen.
+   Material nach Ausbaustufe: 0 bis 2 Holz, 3 bis 5 Stein, 6 bis 8 Prunk. Massstab 1 m = 45 px, Held 82 px.
+   bgF: y der Bodenkante im Hintergrundbild je Material. Bodenobjekte stehen auf der Bodenlinie T,
+   der Held läuft lane Pixel davor. Wandobjekte: y = Abstand ihrer Unterkante über T. */
+function kMat(s){return s<=2?0:s<=5?1:2;}
+var KIT={halle:{bgF:[418,414,432],lane:[18,26,20],ceil:150,items:[
+ {n:'teppich',v:3,s:2,x:164,k:'boden',dy:3},
+ {n:'banner',v:2,s:3,x:164,k:'wand',y:58},
+ {n:'fackel',v:2,s:4,x:100,k:'wand',y:66},{n:'fackel',v:2,s:4,x:226,k:'wand',y:66},
+ {n:'leuchter',s:7,x:164,k:'decke',y:96},
+ {n:'schrank',v:3,s:1,x:38,k:'boden'},
+ {n:'ruestung',s:6,x:90,k:'boden'},
+ {n:'kamin',v:3,s:0,x:276,k:'boden',up:1},
+ {n:'faesser',s:5,x:334,k:'boden'},
+ {n:'tisch',v:3,s:0,x:164,k:'boden'},
+ {n:'katze',s:8,x:258,k:'boden',dy:2}],fire:[276,30]}};
+function kName(r,it,m){return 'k_'+r+'_'+it.n+(it.v===3?m:it.v===2?Math.max(1,m):'');}
+function kList(r){var s=S.up[r]||0,m=kMat(s),l=['k_'+r+'_bg'+m,'k_'+r+'_decke'+m];KIT[r].items.forEach(function(it){if(s>=it.s)l.push(kName(r,it,m));});return l;}
+function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||function(){return '';},
+ st:function(x,FY,H){var K=KIT[r],s=S.up[r]||0,m=kMat(s),B=rBand(H,r),bg=wImg('k_'+r+'_bg'+m);B.oy=B.T-K.bgF[m];W.rb=B;W.fy=B.T;scPlace(x,bg,B,H);
+  K.items.forEach(function(it){if(s<it.s)return;var im=wImg(kName(r,it,m)),w=im.width,h=im.height,X=Math.round(it.x-w/2),Y;
+   if(it.k==='boden')Y=B.T-h+(it.dy||0);else Y=B.T-it.y-h;
+   if(it.k==='decke'){var cy=B.T-K.ceil;x.fillStyle='#2a2018';x.fillRect(it.x,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(it.x+1,cy,1,Y-cy+4);}
+   if(it.up){var cy2=B.T-K.ceil,yy;for(yy=Y-12;yy>cy2-12;yy-=12)x.drawImage(im,0,0,w,12,X,yy,w,12);}
+   x.drawImage(im,X,Y);});
+  var dk=wImg('k_'+r+'_decke'+m),dy0=B.T-K.ceil-dk.height;if(dy0>0){x.fillStyle='#120c08';x.fillRect(0,0,360,dy0);}x.drawImage(dk,0,dy0);
+  var sg=x.createLinearGradient(0,B.T-K.ceil,0,B.T-K.ceil+24);sg.addColorStop(0,'rgba(10,6,3,.45)');sg.addColorStop(1,'rgba(10,6,3,0)');x.fillStyle=sg;x.fillRect(0,B.T-K.ceil,360,24);
+  if(o.st)o.st(x,B,H);},
+ dy:function(c,FY,H,t){var B=W.rb||rBand(H,r),K=KIT[r],s=S.up[r]||0;
+  if(K.fire)wGlow(c,K.fire[0],B.T-K.fire[1],30+(t%6<3?0:4),'rgba(255,170,70,.30)');
+  K.items.forEach(function(it){if(s>=it.s&&it.n==='fackel')wGlow(c,it.x,B.T-it.y-30,22+((t+it.x)%6<3?0:3),'rgba(255,190,90,.28)');});
+  if(o.dy)o.dy(c,B,H,t);}};}
+ROOMS2.halle=kRoom('halle',{sig:function(){return moder();},st:function(x,B,H){wModer(x,B.T,Math.min(H,B.T+40),moder());},
+ dy:function(c,B,H,t){if(moder()>=3)creature(pen(c),80+Math.round(Math.sin(t/12)*14),B.T+8,t);}});
 function wOk(room){var D=ROOMS2[room];if(!D)return false;var f=D.f();if(D.actors)f=f.concat(D.actors().map(function(n){return 'bew_'+n;}));if(room!=='mauer'&&room!=='karte')f.push('held_s_tunika');return wReady(f);}
 function wDraw(c,room,H,T){var D=ROOMS2[room],B=room==='mauer'||room==='karte'?{T:0,oy:0}:rBand(H,room),sg=room+'|'+H+'|'+B.oy+'|'+(S.up[room]||0)+'|'+D.sig(),st=W.st[room];
  if(!st||st.sig!==sg){var cv=mk(360,H),x=cv.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#17110c';x.fillRect(0,0,360,H);WO=[];D.st(x,B.T,H);st=W.st[room]={cv:cv,sig:sg};WO=null;}
