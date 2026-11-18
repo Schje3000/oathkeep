@@ -273,6 +273,9 @@ function act(a){var p=a.split(':');
  if(a==='potion'){if(OK.drinkPotion(S,now())){save();render();toast('Trank getrunken: 24 Stunden lang 50 % mehr Gold');}return;}
  if(a==='potion:buy'){var pp=OK.buyPotion(S);if(pp){save();render();toast('Trank gebraut: -'+pp+' Gold');}return;}
  if(a==='undo'){undo();return;}
+ if(a==='edit:on'){ui.edit=true;ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
+ if(a==='edit:off'){ui.edit=false;ui.confirm='';render();return;}
+ if(a==='edit:reset'){if(ui.confirm!=='edit:reset'){ui.confirm='edit:reset';render();return;}ui.confirm='';if(S.layout)delete S.layout[ui.room];W.st[ui.room]=null;save();render();toast('Anordnung zurückgesetzt');return;}
  if(p[0]==='build'){upBuy(p[1]);return;}
  if(p[0]==='islot'){ui.islot=ui.islot===p[1]?'':p[1];render();return;}
  if(p[0]==='eq'){if(OK.equip(S,p[1],p[2])){ui.islot='';save();render();toast(ITEMS[p[2]].n+' angelegt');}return;}
@@ -394,7 +397,8 @@ function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" wid
  '<label>Sicherung einfügen<textarea rows="3" data-in="imp"></textarea></label><button class="b" data-act="import">Sicherung laden</button>'+
  '<button class="b" data-act="reset">'+(ui.confirm==='reset'?'Wirklich alles löschen?':'Spielstand zurücksetzen')+'</button></div>';
  return h;}
-function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;
+function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;if(!inRoom)ui.edit=false;
+ var cvE=document.getElementById('cv');if(cvE)cvE.style.touchAction=ui.edit?'none':'';
  var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg">'+UI('zurueck')+'Burg</button>';
  var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
  var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
@@ -404,7 +408,10 @@ function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRo
   fl='';
   sh=sheetStart(RI);}
  else if(inRoom){hud=back+'<span class="chip">'+cur.n+'<span class="pill">'+upLvl(ui.room)+'/8</span></span>';
-  sh='<div class="s"><span class="'+cur.c+'" style="font-weight:650">'+cur.s+'.</span> '+cur.d+'</div>'+(vRout()[ui.room]||'');}
+  if(ui.edit&&KIT[ui.room])sh='<div class="card"><div class="t">Einrichten</div><div class="s">Ziehe Möbel entlang des Bodens. Wandschmuck verschiebst du frei an der Wand.</div>'+
+   '<div class="row"><button class="b grow" data-act="edit:reset">'+(ui.confirm==='edit:reset'?'Wirklich zurücksetzen?':'Zurücksetzen')+'</button><button class="b pri grow" data-act="edit:off">Fertig</button></div></div>';
+  else sh='<div class="s"><span class="'+cur.c+'" style="font-weight:650">'+cur.s+'.</span> '+cur.d+'</div>'+(vRout()[ui.room]||'')+
+   (KIT[ui.room]?'<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Einrichten</div><div class="s">Möbel und Wandschmuck selbst platzieren.</div></div><button class="b" data-act="edit:on">Einrichten</button></div></div>':'');}
  else{hud=back+'<span class="chip">'+(ui.tab==='boss'?'Weltkarte':'Held')+'</span>';sh=ui.tab==='boss'?vMap():vHeld();}
  var cl=charLvl();if(cl>S.lvlSeen){var nw=[];['burg','thron','hof'].forEach(function(r){var n=upNext(r);if(n&&!n.sk&&n.req<=cl&&n.req>S.lvlSeen)nw.push(n.n+' ('+n.p+' Gold)');});
   sh='<div class="card lvl">'+UI('held')+'<div class="t big">Stufe '+cl+' erreicht!</div><div class="s">Dein Ruhm wächst. Die Horde wird stärker, aber deine Burg auch.</div>'+(nw.length?'<div class="s">Jetzt baubar: '+nw.join(', ')+'</div>':'')+'<button class="b pri" data-act="lvlok">Weiter</button></div>'+sh;}
@@ -895,16 +902,20 @@ var KIT={halle:{bgF:[402,406,404],lane:[24,32,20],top:[118,98,128],items:[
  {n:'teppich',s:2,x:164,k:'rug',w:124},
  {n:'pfannen0',m:0,s:0,x:164,k:'wand',y:84},{n:'kraeuter0',m:0,s:0,x:104,k:'wand',y:96},
  {n:'fenster1',m:1,s:0,x:44,k:'wand',y:122},{n:'pfannen1',m:1,s:0,x:164,k:'wand',y:66},
- {n:'bild2',m:2,s:0,x:44,k:'wand',y:126},{n:'teller2',m:2,s:0,x:164,k:'wand',y:68},
+ {n:'bild2',m:2,s:0,x:72,k:'wand',y:126},{n:'teller2',m:2,s:0,x:164,k:'wand',y:68},
  {n:'banner',v:2,s:3,x:164,k:'wand',y:118},
  {n:'fackel',v:2,s:4,x:100,k:'wand',y:96},{n:'fackel',v:2,s:4,x:226,k:'wand',y:96},
  {n:'leuchter',s:7,x:164,k:'decke',y:196},
  {n:'schrank',v:3,s:1,x:36,k:'boden'},
  {n:'ruestung',s:6,x:90,k:'boden'},
- {n:'kamin',v:3,s:0,x:276,k:'boden'},
+ {n:'kamin',v:3,s:0,x:276,k:'boden',fire:1},
  {n:'faesser',s:5,x:324,k:'boden'},
  {n:'tisch',v:3,s:0,x:164,k:'boden',dy:3},
  {n:'katze',s:8,x:258,k:'boden',dy:2}],fire:[276,30]}};
+/* Eigene Anordnung: S.layout[raum][schlüssel] = {x, y}. Schlüssel = Name plus laufende Nummer (fackel_1). */
+function kKey(K,i){var n=K.items[i].n,c=0;for(var j=0;j<i;j++)if(K.items[j].n===n)c++;return n+'_'+c;}
+function kPos(r,i){var it=KIT[r].items[i],L=(S.layout&&S.layout[r]||{})[kKey(KIT[r],i)];return{x:L&&isFinite(L.x)?L.x:it.x,y:L&&isFinite(L.y)?L.y:it.y};}
+
 function kName(r,it,m){return 'k_'+r+'_'+it.n+(it.v===3?m:it.v===2?Math.max(1,m):'');}
 function kOn(it,s,m){return s>=it.s&&(it.m===undefined||it.m===m);}
 function kList(r){var s=S.up[r]||0,m=kMat(s),l=['k_'+r+'_bg'+m];KIT[r].items.forEach(function(it){if(kOn(it,s,m)&&it.k!=='rug')l.push(kName(r,it,m));});return l;}
@@ -916,26 +927,46 @@ function kRug(x,cx,w,T,lane,m){var c=RUG[m],h=Math.max(8,lane-10),y0=T-1,i,y,l,r
   x.fillStyle=c[2];x.fillRect(l,y,1,1);x.fillRect(r-1,y,1,1);if(i>1&&i<h-2){x.fillStyle=c[3];x.fillRect(l+2,y,1,1);x.fillRect(r-3,y,1,1);}
   if(i%2===0){x.fillStyle=c[3];x.fillRect(l-2,y,2,1);x.fillRect(r,y,2,1);}}
  x.fillStyle='rgba(0,0,0,.18)';x.fillRect(Math.round(cx-w/2),y0+h,w,1);}
+function kDragStart(px,py){var r=ui.room,K=KIT[r];if(!K||!W.krect)return false;
+ for(var j=W.krect.length-1;j>=0;j--){var q=W.krect[j];if(px>=q.x-4&&px<=q.x+q.w+4&&py>=q.y-4&&py<=q.y+q.h+4){var P=kPos(r,q.i);W.kdrag={key:q.key,i:q.i,k:q.k,dx:px-P.x,dy:py-(W.rb.T-(P.y||0)),w:q.w,h:q.h};return true;}}
+ return false;}
+function kDragMove(px,py){var d=W.kdrag,r=ui.room,K=KIT[r];if(!d||!K)return;var m=kMat(S.up[r]||0),it=K.items[d.i],B=W.rb,nx=Math.round(px-d.dx),ny;
+ nx=Math.max(Math.ceil(d.w/2)+1,Math.min(359-Math.ceil(d.w/2),nx));
+ S.layout=S.layout||{};var L=S.layout[r]=S.layout[r]||{},v={x:nx};
+ if(d.k==='wand'||d.k==='decke'){ny=Math.round(B.T-(py-d.dy));var wall=K.bgF[m]-K.top[m];ny=Math.max(36,Math.min(wall-d.h-4,ny));v.y=ny;}
+ L[d.key]=v;W.st[r]=null;}
+function kDragEnd(){if(W.kdrag){W.kdrag=null;save();}}
+function kBind(){var cv=document.getElementById('cv');if(!cv||cv.kBound)return;cv.kBound=1;
+ var pt=function(e){var b=cv.getBoundingClientRect();return[(e.clientX-b.left)*360/b.width,(e.clientY-b.top)*cv.height/b.height];};
+ cv.addEventListener('pointerdown',function(e){if(!ui.edit)return;var p=pt(e);if(kDragStart(p[0],p[1])){e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(x){}draw();}});
+ cv.addEventListener('pointermove',function(e){if(!ui.edit||!W.kdrag)return;e.preventDefault();var p=pt(e);kDragMove(p[0],p[1]);draw();});
+ ['pointerup','pointercancel'].forEach(function(n){cv.addEventListener(n,function(){if(W.kdrag){kDragEnd();draw();}});});}
 function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||function(){return '';},
  st:function(x,FY,H){var K=KIT[r],s=S.up[r]||0,m=kMat(s),B=rBand(H,r),bg=wImg('k_'+r+'_bg'+m);B.oy=B.T-K.bgF[m];W.rb=B;W.fy=B.T;scPlace(x,bg,B,H);
-  K.items.forEach(function(it){if(!kOn(it,s,m))return;if(it.k==='rug'){kRug(x,it.x,it.w,B.T,K.lane[m],m);return;}var im=wImg(kName(r,it,m)),w=im.width,h=im.height,X=Math.round(it.x-w/2),Y;
-   if(it.k==='boden')Y=B.T-h+(it.dy||0);else Y=B.T-it.y-h;
+  W.krect=[];K.items.forEach(function(it,i){if(!kOn(it,s,m))return;var P=kPos(r,i),key=kKey(K,i);
+   if(it.k==='rug'){kRug(x,P.x,it.w,B.T,K.lane[m],m);W.krect.push({key:key,i:i,k:'rug',x:P.x-it.w/2,y:B.T-2,w:it.w,h:Math.max(8,K.lane[m]-10)+2});return;}
+   var im=wImg(kName(r,it,m)),w=im.width,h=im.height,X=Math.round(P.x-w/2),Y;
+   if(it.k==='boden')Y=B.T-h+(it.dy||0);else Y=B.T-P.y-h;
+   W.krect.push({key:key,i:i,k:it.k,x:X,y:Y,w:w,h:h});
    var wt=B.oy+K.top[m];
-   if(it.k==='decke'){var cy=wt;x.fillStyle='#2a2018';x.fillRect(it.x,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(it.x+1,cy,1,Y-cy+4);}
+   if(it.k==='decke'){var cy=wt,cx=Math.round(P.x);x.fillStyle='#2a2018';x.fillRect(cx,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(cx+1,cy,1,Y-cy+4);}
    if(it.up){var yy;for(yy=Y-12;yy>wt-12;yy-=12)x.drawImage(im,0,0,w,12,X,yy,w,12);}
    x.drawImage(im,X,Y);});
   if(o.st)o.st(x,B,H);},
  dy:function(c,FY,H,t){var B=W.rb||rBand(H,r),K=KIT[r],s=S.up[r]||0;
-  if(K.fire)wGlow(c,K.fire[0],B.T-K.fire[1],30+(t%6<3?0:4),'rgba(255,170,70,.30)');
-  K.items.forEach(function(it){if(kOn(it,s,kMat(s))&&it.n==='fackel')wGlow(c,it.x,B.T-it.y-30,22+((t+it.x)%6<3?0:3),'rgba(255,190,90,.28)');});
+  K.items.forEach(function(it,i){if(!kOn(it,s,kMat(s)))return;var P=kPos(r,i);
+   if(it.fire)wGlow(c,P.x,B.T-K.fire[1],30+(t%6<3?0:4),'rgba(255,170,70,.30)');
+   if(it.n==='fackel')wGlow(c,P.x,B.T-P.y-30,22+((t+i)%6<3?0:3),'rgba(255,190,90,.28)');});
+  if(ui.edit&&W.krect){c.save();W.krect.forEach(function(q){var sel=W.kdrag&&W.kdrag.key===q.key;c.setLineDash(sel?[]:[3,2]);c.lineWidth=1;c.strokeStyle=sel?'#f0cf6a':(q.k==='boden'||q.k==='rug'?'rgba(155,224,106,.85)':'rgba(240,207,106,.7)');c.strokeRect(Math.round(q.x)+0.5,Math.round(q.y)+0.5,Math.round(q.w)-1,Math.round(q.h)-1);});
+   c.setLineDash([2,3]);c.strokeStyle='rgba(155,224,106,.6)';c.beginPath();c.moveTo(0,B.T+0.5);c.lineTo(360,B.T+0.5);c.stroke();c.restore();}
   if(o.dy)o.dy(c,B,H,t);}};}
 ROOMS2.halle=kRoom('halle',{sig:function(){return moder();},st:function(x,B,H){wModer(x,B.T,Math.min(H,B.T+40),moder());},
  dy:function(c,B,H,t){if(moder()>=3)creature(pen(c),80+Math.round(Math.sin(t/12)*14),B.T+8,t);}});
 function wOk(room){var D=ROOMS2[room];if(!D)return false;var f=D.f();if(D.actors)f=f.concat(D.actors().map(function(n){return 'bew_'+n;}));if(room!=='mauer'&&room!=='karte')f.push('held_s_tunika');return wReady(f);}
-function wDraw(c,room,H,T){var D=ROOMS2[room],B=room==='mauer'||room==='karte'?{T:0,oy:0}:rBand(H,room),sg=room+'|'+H+'|'+B.oy+'|'+(S.up[room]||0)+'|'+D.sig(),st=W.st[room];
+function wDraw(c,room,H,T){var D=ROOMS2[room],B=room==='mauer'||room==='karte'?{T:0,oy:0}:rBand(H,room),sg=room+'|'+H+'|'+B.oy+'|'+(S.up[room]||0)+'|'+D.sig()+'|'+JSON.stringify(S.layout&&S.layout[room]||{}),st=W.st[room];
  if(!st||st.sig!==sg){var cv=mk(360,H),x=cv.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#17110c';x.fillRect(0,0,360,H);WO=[];D.st(x,B.T,H);st=W.st[room]={cv:cv,sig:sg};WO=null;}
  c.imageSmoothingEnabled=false;c.drawImage(st.cv,0,0);D.dy(c,B.T,H,tick);
- if(room==='mauer'||room==='karte')return;
+ if(room==='mauer'||room==='karte'||ui.edit)return;
  var list=[],h=heroStep(room,B.T),f=S.rest?0:fit();list.push({a:h,im:heroSheet(),row:f});
  if(D.actors){var hp=happy(),names=D.actors();W.npc=W.npc||{};names.forEach(function(n,i){var a=W.npc[n];
    var hx=36+Math.round(i*288/Math.max(1,names.length-1));if(!a||a.n!==names.length){a=W.npc[n]={x:hx,tx:hx,face:i%2?'e':'s',walk:false,wait:10+i*9,fr:0,lane:[-8,2,-3,6,-6,4][i%6],range:40,w0:30,w1:80,slow:2,n:names.length,h:hx};}
@@ -1003,7 +1034,7 @@ function init(){
   if(el.hasAttribute('data-name')){S.name=el.value.trim()||'Held';save();}
   else if(el.hasAttribute('data-goal')){n=parseFloat(el.value);if(n>0){S.runGoal=n;save();toast('Monatsziel angepasst');}}
   else if(el.getAttribute('data-boss')){n=parseFloat(el.value);if(n>0){S.bosses.forEach(function(b){if(b.id===el.getAttribute('data-boss'))b.target=n;});save();render();toast('Zielwert angepasst');}}});
- for(var rk in ROOMS2)ROOMS2[rk].f().forEach(wImg);for(var ik in ITEMS)wImg(itemIcon(ik));['held_s_tunika','held_s_leder','held_s_kette','held_s_platte','held_s_gold'].forEach(wImg);['magd','bauer','schmied','haendlerin','kind','moench'].forEach(function(n){wImg('bew_'+n);});raids();render();
+ kBind();for(var rk in ROOMS2)ROOMS2[rk].f().forEach(wImg);for(var ik in ITEMS)wImg(itemIcon(ik));['held_s_tunika','held_s_leder','held_s_kette','held_s_platte','held_s_gold'].forEach(wImg);['magd','bauer','schmied','haendlerin','kind','moench'].forEach(function(n){wImg('bew_'+n);});raids();render();
  setInterval(function(){tick++;draw();if(ui.tab==='held')drawPv();},120);window.addEventListener('resize',function(){fitCv();draw();});
  setInterval(function(){var before=S.raids.length;raids();if(S.raids.length!==before)render();},60000);
  if(DEBUG){var ds=document.createElement('script');ds.src='debug.js?v=1';document.body.appendChild(ds);}else initSync();

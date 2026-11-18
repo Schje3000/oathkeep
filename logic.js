@@ -50,7 +50,7 @@ var RAR=OK.RAR=['gewöhnlich','selten','episch'];
 /* ---------- Spielstand ---------- */
 function fresh(now){var n=now;return{v:1,updatedAt:0,created:n,name:'Held',
  look:{skin:'#e0b08a',hair:'#5b3a22',armor:'#8e9aa0',cape:'none',plume:'none'},
- xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],
+ xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],layout:{},
  last:{run:n,gym:n,piano:0,water:n,kueche:n,bad:n,saugen:n,staub:n,bett:n,waesche:0,read:0,book:0},
  log:[],runGoal:50,rest:0,lastRaid:n,raidDue:0,raids:[],
  bosses:[{id:'gp',name:'Der Aarewyrm',goal:'GP von Bern',area:'run',date:'2027-05-15',target:300,dmg:0,done:false,won:false}]};}
