@@ -1,7 +1,7 @@
 /* Welt aus PixelLab-Grafiken: Räume, Burg, Karte, Held. Quelle für den Block in index.html (zwischen den Markierungen WELT-START und WELT-ENDE). */
 var TH_WANG={'0000':[64,32],'0001':[96,32],'0010':[64,64],'0011':[32,64],'0100':[64,0],'0101':[96,64],'0110':[0,32],'0111':[96,96],'1000':[32,32],'1001':[64,96],'1010':[32,0],'1011':[0,64],'1100':[96,0],'1101':[0,0],'1110':[32,96],'1111':[0,96]};
 var HC=92,W={img:{},bad:{},st:{},tone:{},hero:null,hroom:'',ty:0,oy:0,fy:0};
-function wImg(n){var im=W.img[n];if(!im){im=new Image();im.onload=function(){rc.sig='';};im.onerror=function(){W.bad[n]=1;};im.src=(n.indexOf('held_')===0?'assets/held/'+n.slice(5):'assets/raum/'+n)+'.png?v=3';W.img[n]=im;}return im;}
+function wImg(n){var im=W.img[n];if(!im){im=new Image();im.onload=function(){rc.sig='';W.st={};};im.onerror=function(){W.bad[n]=1;};im.src=(n.indexOf('held_')===0?'assets/held/'+n.slice(5):'assets/raum/'+n)+'.png?v=3';W.img[n]=im;}return im;}
 function wReady(l){for(var i=0;i<l.length;i++){var im=wImg(l[i]);if(W.bad[l[i]]||!im.complete||!im.naturalWidth)return false;}return true;}
 function hudB(){var b=0;try{var a=document.getElementById('app').getBoundingClientRect(),k=document.getElementById('hud').children,i,r;for(i=0;i<k.length;i++){r=k[i].getBoundingClientRect();if(r.height)b=Math.max(b,r.bottom-a.top);}if(a.width)b=b*360/a.width;}catch(e){}return Math.round(b);}
 function visB(H){var v=H*0.6;try{var sh=document.getElementById('sheet'),a=document.getElementById('app');if(a.offsetHeight)v=H-Math.min(0.6,sh.offsetHeight/a.offsetHeight)*H;}catch(e){}return v;}
@@ -212,7 +212,7 @@ function kBind(){var cv=document.getElementById('cv');if(!cv||cv.kBound)return;c
  ['pointerup','pointercancel'].forEach(function(n){cv.addEventListener(n,function(){if(W.kdrag){kDragEnd();draw();}});});}
 function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||function(){return '';},actors:o.actors,tone:o.tone,
  st:function(x,FY,H){var K=KIT[r],s=S.up[r]||0,m=kMat(s),B=rBand(H,r),bg=wImg('k_'+r+'_bg'+m);B.oy=B.T-K.bgF[m];W.rb=B;W.fy=B.T;scPlace(x,bg,B,H);
-  W.krect=[];K.items.forEach(function(it,i){if(!kOn(it,s,m))return;var P=kPos(r,i),key=kKey(K,i);
+  W.krect=[];W.kanim=[];K.items.forEach(function(it,i){if(!kOn(it,s,m))return;var P=kPos(r,i),key=kKey(K,i);
    if(it.k==='rug'){kRug(x,P.x,it.w,B.T,K.lane[m],m);W.krect.push({key:key,i:i,k:'rug',x:P.x-it.w/2,y:B.T-2,w:it.w,h:Math.max(8,K.lane[m]-10)+2});return;}
    var nm=kName(r,it,m),im=wImg(nm),w=im.width,h=im.height,X=Math.round(P.x-w/2),Y,wt=B.oy+K.top[m];
    if(o.tone){var tn=o.tone(it,nm);if(tn)im=tn;}
@@ -221,6 +221,7 @@ function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||fun
     x.drawImage(im,0,cap,w,h-cap,X,Y+cap,w,h-cap);for(yy=Y+cap-band;yy>wt+cap-band;yy-=band)x.drawImage(im,0,cap,w,band,X,yy,w,band);
     x.drawImage(im,0,0,w,cap+1,X,wt,w,cap+1);return;}
    W.krect.push({key:key,i:i,k:it.k,x:X,y:Y,w:w,h:h});
+   if(it.an){var sa=wImg(nm+'_a');if(sa.naturalWidth&&!W.bad[nm+'_a']){W.kanim.push({im:sa,X:X,Y:Y,w:w,h:h,n:Math.max(1,Math.round(sa.naturalWidth/w))});if(it.k==='decke'){var cy0=wt,cx0=Math.round(P.x);x.fillStyle='#2a2018';x.fillRect(cx0,cy0,1,Y-cy0+4);}return;}}
    if(it.k==='decke'){var cy=wt,cx=Math.round(P.x);x.fillStyle='#2a2018';x.fillRect(cx,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(cx+1,cy,1,Y-cy+4);}
    if(it.up){var yy;for(yy=Y-12;yy>wt-12;yy-=12)x.drawImage(im,0,0,w,12,X,yy,w,12);}
    x.drawImage(im,X,Y);});
@@ -229,6 +230,7 @@ function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||fun
   K.items.forEach(function(it,i){if(!kOn(it,s,kMat(s)))return;var P=kPos(r,i);
    if(it.fire)wGlow(c,P.x,B.T-K.fire[1],30+(t%6<3?0:4),'rgba(255,170,70,.30)');
    if(it.n==='fackel')wGlow(c,P.x,B.T-P.y-30,22+((t+i)%6<3?0:3),'rgba(255,190,90,.28)');});
+  (W.kanim||[]).forEach(function(a){c.drawImage(a.im,(Math.floor(t/2)%a.n)*a.w,0,a.w,a.h,a.X,a.Y,a.w,a.h);});
   dkDraw(c,r,B,t);
   if(ui.edit&&W.krect){c.save();W.krect.concat(W.drect||[]).forEach(function(q){var sel=(W.kdrag&&W.kdrag.key===q.key)||(q.id&&W.ksel===q.id);c.setLineDash(sel?[]:[3,2]);c.lineWidth=1;c.strokeStyle=sel?'#f0cf6a':(q.k==='boden'||q.k==='rug'?'rgba(155,224,106,.85)':'rgba(240,207,106,.7)');c.strokeRect(Math.round(q.x)+0.5,Math.round(q.y)+0.5,Math.round(q.w)-1,Math.round(q.h)-1);});
    c.setLineDash([2,3]);c.strokeStyle='rgba(155,224,106,.6)';c.beginPath();c.moveTo(0,B.T+0.5);c.lineTo(360,B.T+0.5);c.stroke();c.restore();}

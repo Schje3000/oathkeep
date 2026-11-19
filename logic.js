@@ -23,7 +23,7 @@ var CAT=OK.CAT={
  burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
  thron:['Steinboden, Teppich und Thron','Banner','Fackeln','Säulen','Festtafel','Thronwachen','Wandteppiche und Hofdame','Goldener Thron und Barde'],
  halle:['Küchenschrank','Teppich','Wandbanner','Fackeln','Fässer und Vorräte','Rüstungsständer','Kronleuchter','Hauskatze'],
- turm:['Kerzenleuchter','Kristallkugel','Notenpult','Bücherregal','Sternkarte','Teleskop','Harfe','Zauberspiegel'],
+ turm:['Schwebende Kerzen','Klangkristall','Runenpult','Zauberbücher','Sternkarte','Astrolabium','Resonanzharfe','Zauberspiegel'],
  bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
  garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenbrunnen'],
  hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
