@@ -12,19 +12,80 @@ Spielzeit 3 bis 5 Minuten pro Tag. Nur ein Spieler.
 
 - Pixel-Art im Fantasy-Stil: Ritter, Burgen, Ruinen, sonniger grüner Wald.
   Ruhig und einladend, nicht düster.
-- Perspektive: Seitenansicht (Sidescroller). Jeder Ort ist pro Ausbaustufe ein
-  Hochformatbild (360 × 512) von der Seite, mit einer klaren waagrechten
-  Bodenlinie knapp über der Holzleiste. Oben nur Decke oder Himmel.
+- Perspektive: Seitenansicht (Sidescroller). Die Räume sind ein Bühnenbaukasten
+  (siehe unten). Burg-Aussenansicht und Weltkarte sind von oben.
 - Held und Bewohner sind Sprites in Seitenansicht. Sie laufen nur nach links
   und rechts auf der Bodenlinie, Westen ist gespiegelter Osten. In Ruhe
   schauen sie zum Betrachter oder zur Seite. Figuren und Möbel haben den
   gleichen Massstab.
-- Die Weltkarte ist die einzige Ausnahme: eine Pergamentkarte von oben.
 - Grafiken aus PixelLab, detailliert gepixelt (Held und Burg).
 - Pixel immer scharf skaliert, nie verwischt (`image-rendering: pixelated`).
 - Jeder Bereich hat ein eigenes animiertes Bild mit sichtbarer Stufe.
-- Der Stil der Räume folgt der Burgstufe: Stufe 1 bis 3 Holz, 4 bis 6 Stein,
-  7 bis 8 Prunk (Marmor).
+- Der Stil der Räume folgt der Ausbaustufe des Raums: 0 bis 2 Holz, 3 bis 5
+  Stein, 6 bis 8 Prunk. Stein braucht Burgstufe 4, Prunk Burgstufe 7.
+
+## Bühnenbaukasten (Räume)
+
+Verbindlich für alle Innen- und Aussenräume. Ziel: Held, Möbel und Leute
+wirken wie aus einem Guss, und der Held läuft nie in ein Objekt.
+
+### Aufbau
+
+1. **Hintergrund** je Raum und Material: ein Bild 360 × 512 mit Decke (oder
+   Himmel), Rückwand und Boden aus demselben Material. Die Rückwand ist eine
+   flache Fläche über die ganze Breite: keine Seitenwände, keine Ecken, keine
+   Säulen, keine Bögen, keine Fenster, keine Möbel, keine Leute.
+2. **Bodenlinie:** Alle Bodenobjekte stehen auf derselben Linie (Wandfuss).
+   Sie kommt aus dem Code (`KIT.bgF`), nicht aus dem Bild.
+3. **Laufweg:** Der Held und die Bewohner laufen auf einem Streifen vor der
+   Bodenlinie (`KIT.lane`). Sie werden immer vor den Möbeln gezeichnet.
+4. **Objekte** sind einzelne Sprites mit transparentem Hintergrund:
+   Bodenobjekte (Möbel, Figuren), Wandobjekte (Bilder, Banner, Fackeln),
+   Deckenobjekte (Leuchter mit Schnur). Säulen reichen immer vom Boden bis zur
+   Decke.
+5. **Ausbau:** Jede Ausbaustufe fügt ein Objekt hinzu oder tauscht eines aus.
+   Je Material gibt es zwei feste Wandschmuck-Stücke.
+6. **Einrichten:** Jeremie kann Objekte selbst verschieben. Bodenobjekte nur
+   waagrecht auf der Bodenlinie, Wandobjekte frei zwischen Boden und Decke.
+
+### Kamera und Zeichnung
+
+- Reine Seitenansicht auf Augenhöhe: keine Draufsicht, keine Schrägsicht,
+  keine sichtbare Oberseite von Tischen oder Sockeln. Figuren in Ruhe frontal.
+- Licht warm von links oben. Schatten nur als Kontaktschatten unter Figuren.
+- Kontur 1 px, einfarbig dunkel. Pixel nie weichgezeichnet.
+- Keine Rohre, Schornsteine oder Ansätze, die ins Leere laufen.
+
+### Massstab
+
+1 m = 45 px. Der Held ist 82 px gross (1,80 m).
+
+| Objekt | Höhe |
+|---|---|
+| Held, erwachsene Bewohner | 76 bis 84 px |
+| Kind | 56 px |
+| Stuhl | 45 px |
+| Tisch | 36 bis 52 px |
+| Kamin | 70 bis 75 px |
+| Schrank, Regal | 85 bis 130 px |
+| Thron | 110 bis 120 px |
+| Marktstand, Schmiede | 85 bis 100 px |
+| Tür | 100 px |
+
+### PixelLab-Beschreibungen
+
+- Hintergrund: «Empty background for a 2D side-scrolling platformer game, like
+  a flat stage backdrop ... the back wall is one single flat surface ... no
+  side walls, no corners, no recesses, no arches ... completely empty».
+- Bodenobjekt: «a single object, strict side view as in a 2D side-scrolling
+  game: seen exactly from the front at eye level, flat, symmetrical, no top
+  surface visible, no perspective, standing on the bottom edge of the canvas».
+- Wandobjekt: «a single object mounted flat on a wall, strict front view ...
+  no wall behind it».
+- Figur: «a single character standing still and facing the viewer straight
+  on, front view, full body».
+- Immer zwei Varianten erzeugen und die flachere wählen. Jedes neue Objekt in
+  einer Übersicht neben dem Helden prüfen.
 
 ## UI
 
