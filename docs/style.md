@@ -102,6 +102,14 @@ wirken wie aus einem Guss, und der Held läuft nie in ein Objekt.
 - Touch-Ziele mindestens 44 × 44 Pixel, echte `button`-Elemente.
 - Safe Areas (Notch, Home-Leiste) bleiben frei.
 
+### Waldholz-Stil
+
+- Alle Bedienelemente kommen aus einem PixelLab-UI-Satz (`assets/ui/`): warmes Holz mit Ranken, Moos und Goldbeschlägen.
+- Hauptknopf: blattgrünes Holz mit Ranken, heller Text mit dunkelgrünem Schatten. Nebenknopf: helles Holz mit Goldecken, dunkler Text. Gesperrt: dunkles Holz, abgedunkelt.
+- Reiter: gewählt helles Holz, sonst dunkles Holz. Karten und Kacheln: dunkler Holzrahmen. Holzleiste: Rahmen mit Moos und Ranken an der Oberkante.
+- Pixel bleiben scharf: 1 Bildpixel = 1 CSS-Pixel, keine krummen Skalierungen.
+- Zurück zur Burg: Pfeil im Knopf «Burg», zusätzlich vom linken Rand nach rechts wischen.
+
 ### Schrift
 
 - «VT323» (Google Fonts) für Titel, Knöpfe und Zahlen.
