@@ -72,6 +72,15 @@ wirken wie aus einem Guss, und der Held läuft nie in ein Objekt.
 | Marktstand, Schmiede | 85 bis 100 px |
 | Tür | 100 px |
 
+### Einrichtung und Animation
+
+- Einrichtungsstücke folgen denselben Regeln wie die Möbel: Seitenansicht,
+  kein Boden, keine Grasplatte, keine Draufsicht.
+- Animiert sind Dinge, die sich von selbst bewegen: Flammen, Pendel, Wasser,
+  Tiere, Magie. Schleife aus 8 Bildern, ruhig und klein, nie hektisch.
+- Der Zauberturm ist kein Musikzimmer: Alles weist auf Klangmagie hin
+  (Orgel, Runen, Kristalle, schwebende Kerzen, Sternbilder).
+
 ### PixelLab-Beschreibungen
 
 - Hintergrund: «Empty background for a 2D side-scrolling platformer game, like

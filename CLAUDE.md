@@ -130,6 +130,14 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 - **Zurücknehmen:** Im Thronsaal je Trainingsart die letzten fünf Einträge, sonst der letzte Eintrag von heute.
 - **Aufstieg:** Neue Charakterstufe zeigt eine Karte mit dem, was jetzt baubar ist (`S.lvlSeen`).
 
+### Händler, Einrichtung und Ausrüster
+
+- **Händler** im Innenhof ab Marktstand (Hof-Ausbau 1): 6 Einrichtungsstücke im Wochenangebot (`OK.shopOffer`, neu jeden Montag), Kauf mit Gold (`OK.buyDeko`). Gekauftes liegt in `S.deko`.
+- **Einrichtung** (`OK.DEKO`, Liste mit Bildbeschreibungen in `tools/deko.json`): 48 Stücke, davon 10 nur als Beute (auch als `ITEMS` mit `sl: 'moebel'` und kleinen Boni). Je Stück Art (Boden, Wand, Decke) und Ort (innen, aussen, beides). Aufstellen beim Einrichten über das Lager in jedem passenden Raum (`S.place[raum] = [{id,x,y}]`), zurück ins Lager durch Antippen. Bilder `k_deko_<id>.png`, Animationen als Streifen `k_deko_<id>_a.png` (8 Bilder nebeneinander).
+- **Ausrüster** ab Schmiede (Hof-Ausbau 3), rein optisch (`OK.COS`, `S.cos`): Umhangfarben und Metalltöne (per Code umgefärbt, `cosTint`), Begleiter (Hund, Katze, Fuchs, Rabe; folgen dem Helden, `pet_<n>.png` und `_a`), Gewänder Waldläufer und Magier (eigene Heldenblätter `assets/held/s_<gewand>.png`, IDs per `tools/outfits.py`). Wechseln beim Helden unter «Aussehen».
+- **Animationen** entstehen mit `tools/anim_img.py` (PixelLab `animate_image`, letztes Bild gleich dem ersten, damit es eine Schleife ergibt), etwa 1 Generierung pro Stück.
+- **Zauberturm** ist mystisch: Die Klangorgel (Holz, Stein, Kristall) erzeugt sichtbar Magie, dazu Runen, schwebende Kerzen, Klangkristall, Runenpult, Zauberbücher, Astrolabium, Resonanzharfe, Zauberspiegel. Verstummt der Turm, stehen Orgel und Kristall still und werden grau.
+
 ## 5. Oberfläche
 
 ### Aufbau
