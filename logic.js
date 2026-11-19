@@ -25,7 +25,7 @@ var CAT=OK.CAT={
  halle:['Küchenschrank','Teppich','Wandbanner','Fackeln','Fässer und Vorräte','Rüstungsständer','Kronleuchter','Hauskatze'],
  turm:['Kerzenleuchter','Kristallkugel','Notenpult','Bücherregal','Sternkarte','Teleskop','Harfe','Zauberspiegel'],
  bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
- garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenteich'],
+ garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenbrunnen'],
  hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
 var CAT_SK=OK.CAT_SK={halle:'hau',turm:'kla',bib:'wis',garten:'kra'},CAT_P=OK.CAT_P=[30,55,85,125,170,225,290,360],CAT_RS=OK.CAT_RS=[2,3,4,5,6,7,8,9],CAT_RC=OK.CAT_RC=[2,3,5,7,9,11,13,15],
  BURG_P=OK.BURG_P=[0,100,180,280,400,550,750,1000],BURG_RC=OK.BURG_RC=[1,2,4,6,8,10,12,14];
