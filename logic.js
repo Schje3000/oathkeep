@@ -26,7 +26,7 @@ var CAT=OK.CAT={
  turm:['Schwebende Kerzen','Klangkristall','Runenpult','Zauberbücher','Sternkarte','Astrolabium','Resonanzharfe','Zauberspiegel'],
  bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
  garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenbrunnen'],
- hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
+ hof:['Händlerkarren','Neue Familie','Ausrüster','Neue Familie','Blumen und Laterne','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
 var CAT_SK=OK.CAT_SK={halle:'hau',turm:'kla',bib:'wis',garten:'kra'},CAT_P=OK.CAT_P=[30,55,85,125,170,225,290,360],CAT_RS=OK.CAT_RS=[2,3,4,5,6,7,8,9],CAT_RC=OK.CAT_RC=[2,3,5,7,9,11,13,15],
  BURG_P=OK.BURG_P=[0,100,180,280,400,550,750,1000],BURG_RC=OK.BURG_RC=[1,2,4,6,8,10,12,14];
 
@@ -62,12 +62,24 @@ OK.dekoPlace=function(S,room,id,x,y){if(OK.dekoOwned(S).indexOf(id)<0||!OK.dekoF
  (S.place[room]=S.place[room]||[]).push({id:id,x:Math.round(x),y:Math.round(y||0)});return true;};
 OK.dekoMove=function(S,room,id,x,y){var L=S.place[room]||[];for(var i=0;i<L.length;i++)if(L[i].id===id){L[i].x=Math.round(x);if(y!==undefined)L[i].y=Math.round(y);return true;}return false;};
 /* Wochenangebot: 6 Stücke aus dem Händlersortiment, die du noch nicht hast, neu gemischt jeden Montag. */
-OK.shopOpen=function(S){return (S.up.hof||0)>=1;};
+/* Läden im Innenhof: Händler (h) kommt mit Hof-Ausbau 1, Ausrüster (a) mit Hof-Ausbau 3. Danach eigene Ausbaustufen 1 bis 4 (S.shop). */
+OK.SHOP={h:[{n:'Händlerkarren',p:0,req:0,slots:3},{n:'Marktstand',p:120,req:4,slots:4},{n:'Krämerladen',p:220,req:7,slots:5},{n:'Handelshaus',p:380,req:10,slots:6,rare:1}],
+ a:[{n:'Schneiderstand',p:0,req:0,t:'cape'},{n:'Rüstschmiede',p:150,req:5,t:'metall'},{n:'Tierstall',p:250,req:8,t:'pet'},{n:'Gewandhaus',p:400,req:11,t:'outfit'}]};
+OK.SHOPHOF={h:1,a:3};
+OK.shopLvl=function(S,k){if((S.up.hof||0)<OK.SHOPHOF[k])return 0;var v=(S.shop&&S.shop[k])||1;return Math.max(1,Math.min(4,v));};
+OK.shopNext=function(S,k){var l=OK.shopLvl(S,k);if(!l||l>=4)return null;var x=OK.SHOP[k][l];return{lvl:l+1,n:x.n,p:x.p,req:x.req};};
+OK.shopUpOk=function(S,k){var n=OK.shopNext(S,k);return !!n&&S.gold>=n.p&&charLvlOf(S.xp)>=n.req;};
+OK.shopUp=function(S,k){if(!OK.shopUpOk(S,k))return null;var n=OK.shopNext(S,k);S.gold-=n.p;S.shop[k]=n.lvl;return n;};
+OK.cosTypes=function(S){var l=OK.shopLvl(S,'a'),t=[];for(var i=0;i<l;i++)t.push(OK.SHOP.a[i].t);return t;};
+OK.dekoPrice=function(id){var d=DEKO[id];return d?(d.p||260):0;};
+OK.shopOpen=function(S){return OK.shopLvl(S,'h')>0;};
 OK.shopWeek=function(now){return Math.floor((weekStart(now)+3*DAY)/(7*DAY));};
-OK.shopOffer=function(S,now){var pool=Object.keys(DEKO).filter(function(id){return DEKO[id].p>0&&S.deko.indexOf(id)<0;}),w=OK.shopWeek(now),seed=w*9301+49297;
+OK.shopOffer=function(S,now){var L=OK.shopLvl(S,'h');if(!L)return [];var cfg=OK.SHOP.h[L-1],pool=Object.keys(DEKO).filter(function(id){return DEKO[id].p>0&&S.deko.indexOf(id)<0;}),w=OK.shopWeek(now),seed=w*9301+49297;
  var rnd=function(){seed=(seed*9301+49297)%233280;return seed/233280;};
- for(var i=pool.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=pool[i];pool[i]=pool[j];pool[j]=t;}return pool.slice(0,6);};
-OK.buyDeko=function(S,id,now){var d=DEKO[id];if(!d||!OK.shopOpen(S)||OK.shopOffer(S,now).indexOf(id)<0||S.gold<d.p)return false;S.gold-=d.p;S.deko.push(id);return true;};
+ for(var i=pool.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=pool[i];pool[i]=pool[j];pool[j]=t;}var off=pool.slice(0,cfg.slots);
+ if(cfg.rare){var own=OK.dekoOwned(S),rare=Object.keys(DEKO).filter(function(id){return !DEKO[id].p&&own.indexOf(id)<0;});if(rare.length)off.push(rare[Math.floor(rnd()*rare.length)]);}
+ return off;};
+OK.buyDeko=function(S,id,now){var d=DEKO[id],p=OK.dekoPrice(id);if(!d||!OK.shopOpen(S)||OK.shopOffer(S,now).indexOf(id)<0||S.gold<p)return false;S.gold-=p;if(!d.p&&ITEMS[id])S.inv.push(id);else S.deko.push(id);return true;};
 
 /* ---------- Ausrüster (Cosmetics) ----------
    t = cape (Umhangfarbe), metall (Metallton der Rüstung), pet (Begleiter), outfit (eigene Heldenfassung). Rein optisch, keine Boni. */
@@ -77,14 +89,14 @@ var COS=OK.COS={
  metall_bronze:{n:'Bronzeton',t:'metall',p:120},metall_schwarz:{n:'Schwarzstahl',t:'metall',p:150},metall_blau:{n:'Blaustahl',t:'metall',p:150},metall_rot:{n:'Rotgold',t:'metall',p:200},
  pet_hund:{n:'Hund',t:'pet',p:200},pet_katze:{n:'Katze',t:'pet',p:200},pet_fuchs:{n:'Fuchs',t:'pet',p:250},pet_rabe:{n:'Rabe',t:'pet',p:250},
  outfit_waldlaeufer:{n:'Waldläufer',t:'outfit',p:400},outfit_magier:{n:'Magier',t:'outfit',p:500}};
-OK.cosOpen=function(S){return (S.up.hof||0)>=3;};
-OK.buyCos=function(S,id){var c=COS[id];if(!c||!OK.cosOpen(S)||S.cos.own.indexOf(id)>=0||S.gold<c.p)return false;S.gold-=c.p;S.cos.own.push(id);S.cos[c.t]=id;return true;};
+OK.cosOpen=function(S){return OK.shopLvl(S,'a')>0;};
+OK.buyCos=function(S,id){var c=COS[id];if(!c||!OK.cosOpen(S)||OK.cosTypes(S).indexOf(c.t)<0||S.cos.own.indexOf(id)>=0||S.gold<c.p)return false;S.gold-=c.p;S.cos.own.push(id);S.cos[c.t]=id;return true;};
 OK.setCos=function(S,t,id){if(id&&(S.cos.own.indexOf(id)<0||!COS[id]||COS[id].t!==t))return false;S.cos[t]=id||'';return true;};
 
 /* ---------- Spielstand ---------- */
 function fresh(now){var n=now;return{v:1,updatedAt:0,created:n,name:'Held',
  look:{skin:'#e0b08a',hair:'#5b3a22',armor:'#8e9aa0',cape:'none',plume:'none'},
- xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],layout:{},deko:[],place:{},cos:{own:[],cape:'',metall:'',pet:'',outfit:''},
+ xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],layout:{},deko:[],place:{},cos:{own:[],cape:'',metall:'',pet:'',outfit:''},shop:{h:1,a:1},
  last:{run:n,gym:n,piano:0,water:n,kueche:n,bad:n,saugen:n,staub:n,bett:n,waesche:0,read:0,book:0},
  log:[],runGoal:50,rest:0,lastRaid:n,raidDue:0,raids:[],
  bosses:[{id:'gp',name:'Der Aarewyrm',goal:'GP von Bern',area:'run',date:'2027-05-15',target:300,dmg:0,done:false,won:false}]};}

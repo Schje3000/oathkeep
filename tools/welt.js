@@ -172,10 +172,11 @@ var KIT={halle:{bgF:[402,406,404],lane:[24,32,20],top:[118,98,128],items:[
  {n:'katze',s:8,x:258,k:'boden',dy:2}],fire:[276,30]}};
 /* Eigene Anordnung: S.layout[raum][schlüssel] = {x, y}. Schlüssel = Name plus laufende Nummer (fackel_1). */
 function kKey(K,i){var n=K.items[i].n,c=0;for(var j=0;j<i;j++)if(K.items[j].n===n)c++;return n+'_'+c;}
-function kPos(r,i){var it=KIT[r].items[i],L=(S.layout&&S.layout[r]||{})[kKey(KIT[r],i)];return{x:L&&isFinite(L.x)?L.x:it.x,y:L&&isFinite(L.y)?L.y:it.y};}
+function kPos(r,i){var it=KIT[r].items[i];if(it.rel){var K=KIT[r],sl=S.up[r]||0,ml=kMat(sl);for(var j=0;j<K.items.length;j++)if(K.items[j].g===it.rel&&kOn(K.items[j],sl,ml)){var Q=kPos(r,j);return{x:Q.x+(it.dx||0),y:0};}}
+ var L=(S.layout&&S.layout[r]||{})[kKey(KIT[r],i)];return{x:L&&isFinite(L.x)?L.x:it.x,y:L&&isFinite(L.y)?L.y:it.y};}
 
 function kName(r,it,m){return 'k_'+(it.src||r)+'_'+it.n+(it.v===3?m:it.v===2?Math.max(1,m):'');}
-function kOn(it,s,m){return s>=it.s&&(it.e===undefined||s<=it.e)&&(it.m===undefined||it.m===m);}
+function kOn(it,s,m){if(it.sh){var L=OK.shopLvl(S,it.sh);if(it.lv?L!==it.lv:L<1)return false;}return s>=it.s&&(it.e===undefined||s<=it.e)&&(it.m===undefined||it.m===m);}
 function kList(r){var s=S.up[r]||0,m=kMat(s),l=['k_'+r+'_bg'+m];KIT[r].items.forEach(function(it){if(kOn(it,s,m)&&it.k!=='rug')l.push(kName(r,it,m));});return l;}
 /* Läufer flach auf dem Boden, zwischen Wandfuss und Laufweg, leicht trapezförmig wie der Boden */
 var RUG=[['#8a6a44','#c9ad7c','#5e4428','#e3cf9f'],['#8e2a22','#b8372c','#5a1712','#e2b955'],['#7a1420','#a01d2c','#4a0a12','#f0cf6a']];
@@ -207,12 +208,12 @@ function kDragMove(px,py){var d=W.kdrag,r=ui.room,K=KIT[r];if(!d||!K)return;var 
 function kDragEnd(){if(W.kdrag){W.kdrag=null;save();}}
 function kBind(){var cv=document.getElementById('cv');if(!cv||cv.kBound)return;cv.kBound=1;
  var pt=function(e){var b=cv.getBoundingClientRect();return[(e.clientX-b.left)*360/b.width,(e.clientY-b.top)*cv.height/b.height];};
- cv.addEventListener('pointerdown',function(e){if(!ui.edit)return;var p=pt(e);if(kDragStart(p[0],p[1])){e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(x){}draw();}});
+ cv.addEventListener('pointerdown',function(e){if(!ui.edit){if(ui.tab==='burg'&&ui.room==='hof'&&W.mrect&&W.mrect.length){var q=pt(e);for(var i=0;i<W.mrect.length;i++){var m=W.mrect[i];if(q[0]>=m.x&&q[0]<=m.x+m.w&&q[1]>=m.y&&q[1]<=m.y+m.h){var el=document.querySelector('[data-laden='+m.k+']');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});return;}}}return;}var p=pt(e);if(kDragStart(p[0],p[1])){e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(x){}draw();}});
  cv.addEventListener('pointermove',function(e){if(!ui.edit||!W.kdrag)return;e.preventDefault();var p=pt(e);kDragMove(p[0],p[1]);draw();});
  ['pointerup','pointercancel'].forEach(function(n){cv.addEventListener(n,function(){if(W.kdrag){kDragEnd();draw();}});});}
 function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||function(){return '';},actors:o.actors,tone:o.tone,
  st:function(x,FY,H){var K=KIT[r],s=S.up[r]||0,m=kMat(s),B=rBand(H,r),bg=wImg('k_'+r+'_bg'+m);B.oy=B.T-K.bgF[m];W.rb=B;W.fy=B.T;scPlace(x,bg,B,H);
-  W.krect=[];W.kanim=[];K.items.forEach(function(it,i){if(!kOn(it,s,m))return;var P=kPos(r,i),key=kKey(K,i);
+  W.krect=[];W.kanim=[];W.mrect=[];K.items.forEach(function(it,i){if(!kOn(it,s,m))return;var P=kPos(r,i),key=kKey(K,i);
    if(it.k==='rug'){kRug(x,P.x,it.w,B.T,K.lane[m],m);W.krect.push({key:key,i:i,k:'rug',x:P.x-it.w/2,y:B.T-2,w:it.w,h:Math.max(8,K.lane[m]-10)+2});return;}
    var nm=kName(r,it,m),im=wImg(nm),w=im.width,h=im.height,X=Math.round(P.x-w/2),Y,wt=B.oy+K.top[m];
    if(o.tone){var tn=o.tone(it,nm);if(tn)im=tn;}
@@ -220,7 +221,8 @@ function kRoom(r,o){o=o||{};return{f:function(){return kList(r);},sig:o.sig||fun
    if(it.span){var cap=Math.round(h*0.22),band=8,yy;W.krect.push({key:key,i:i,k:it.k,x:X,y:wt,w:w,h:B.T-wt});
     x.drawImage(im,0,cap,w,h-cap,X,Y+cap,w,h-cap);for(yy=Y+cap-band;yy>wt+cap-band;yy-=band)x.drawImage(im,0,cap,w,band,X,yy,w,band);
     x.drawImage(im,0,0,w,cap+1,X,wt,w,cap+1);return;}
-   W.krect.push({key:key,i:i,k:it.k,x:X,y:Y,w:w,h:h});
+   if(it.shk)W.mrect.push({k:it.shk,x:X,y:Y,w:w,h:h});
+   if(!it.rel)W.krect.push({key:key,i:i,k:it.k,x:X,y:Y,w:w,h:h});
    if(it.an&&!(o.still&&o.still(it))){var sa=wImg(nm+'_a');if(sa.naturalWidth&&!W.bad[nm+'_a']){W.kanim.push({im:sa,X:X,Y:Y,w:w,h:h,n:Math.max(1,Math.round(sa.naturalWidth/w))});if(it.k==='decke'){var cy0=wt,cx0=Math.round(P.x);x.fillStyle='#2a2018';x.fillRect(cx0,cy0,1,Y-cy0+4);}return;}}
    if(it.k==='decke'){var cy=wt,cx=Math.round(P.x);x.fillStyle='#2a2018';x.fillRect(cx,cy,1,Y-cy+4);x.fillStyle='rgba(255,230,160,.18)';x.fillRect(cx+1,cy,1,Y-cy+4);}
    if(it.up){var yy;for(yy=Y-12;yy>wt-12;yy-=12)x.drawImage(im,0,0,w,12,X,yy,w,12);}
@@ -271,9 +273,15 @@ KIT.garten={bgF:[380,418,386],lane:[36,32,30],top:[235,190,210],items:[
  {n:'beet',v:3,s:0,x:32,k:'boden',dy:3},{n:'beet',v:3,s:1,x:92,k:'boden',dy:3},{n:'beet',v:3,s:3,x:152,k:'boden',dy:3},{n:'beet',v:3,s:5,x:212,k:'boden',dy:3},
  {n:'scheuche',s:2,x:152,k:'boden',dy:3},{n:'brunnen',s:8,x:270,k:'boden',dy:4},{n:'bienen',s:6,x:307,k:'boden',dy:3},{n:'bank',s:4,x:336,k:'boden',dy:4}]};
 KIT.hof={bgF:[380,420,396],lane:[40,34,40],top:[180,230,150],items:[
- {n:'brett0',m:0,s:0,x:228,k:'wand',y:110},{n:'laterne1',m:1,s:0,x:228,k:'wand',y:110},{n:'wappen2',m:2,s:0,x:228,k:'wand',y:110},
- {n:'maibaum',s:8,x:222,k:'boden'},{n:'schmiede',s:3,x:50,k:'boden'},{n:'stall',s:7,x:306,k:'boden'},
- {n:'stand',s:1,e:4,x:140,k:'boden'},{n:'baecker',s:5,x:140,k:'boden'},{n:'brunnen',v:3,s:0,x:222,k:'boden',dy:2}]};
+ {n:'brett0',m:0,s:0,x:312,k:'wand',y:118},{n:'laterne1',m:1,s:0,x:312,k:'wand',y:118},{n:'wappen2',m:2,s:0,x:312,k:'wand',y:118},
+ {n:'maibaum',s:8,x:250,k:'boden'},{n:'stall',s:7,x:316,k:'boden'},
+ {n:'ausruester1',sh:'a',lv:1,s:0,x:58,k:'boden',g:'abau',shk:'a'},{n:'schmiede',sh:'a',lv:2,s:0,x:58,k:'boden',g:'abau',shk:'a'},
+ {n:'ausruester3',sh:'a',lv:3,s:0,x:58,k:'boden',g:'abau',shk:'a'},{n:'ausruester4',sh:'a',lv:4,s:0,x:58,k:'boden',g:'abau',shk:'a'},
+ {n:'haendler1',sh:'h',lv:1,s:0,x:182,k:'boden',g:'hbau',shk:'h'},{n:'stand',sh:'h',lv:2,s:0,x:182,k:'boden',g:'hbau',shk:'h'},
+ {n:'haendler3',sh:'h',lv:3,s:0,x:182,k:'boden',g:'hbau',shk:'h'},{n:'haendler4',sh:'h',lv:4,s:0,x:182,k:'boden',g:'hbau',shk:'h'},
+ {n:'laternenpfahl',src:'deko',s:5,x:120,k:'boden',an:1},
+ {n:'brunnen',v:3,s:0,x:262,k:'boden',dy:2},
+ {n:'ausrfig',sh:'a',s:0,rel:'abau',dx:12,k:'boden',dy:6,an:1,shk:'a'},{n:'haendlerfig',sh:'h',s:0,rel:'hbau',dx:24,k:'boden',dy:6,an:1,shk:'h'}]};
 function kIdx(r,n){var K=KIT[r],m=kMat(S.up[r]||0),s=S.up[r]||0;for(var i=0;i<K.items.length;i++)if(K.items[i].n===n&&kOn(K.items[i],s,m))return i;return -1;}
 ROOMS2.thron=kRoom('thron');
 ROOMS2.turm=kRoom('turm',{sig:function(){return tower();},
@@ -294,7 +302,7 @@ ROOMS2.garten=kRoom('garten',{sig:function(){return plant();},
   if(pl===0)for(i=0;i<4;i++){X=40+i*80+Math.sin(t/7+i*2)*18;Y=B.T-60-(i%2)*40+Math.cos(t/5+i)*8;var co=['#EDF0D8','#E8C860','#e86aa0','#9fd0ff'][i];R(X,Y,2,1,co);R(X+(t%4<2?-1:2),Y-1,1,2,co);}
   if(pl===3)for(i=0;i<14;i++)R(24+i*22+Math.sin(t/2+i*3)*6,B.T-30-(i%4)*12+Math.cos(t/3+i)*6,1,1,'#16141c');
   if(pl===2)for(i=0;i<6;i++){Y=(t*0.8+i*40)%170;R(250+i*14+Math.sin(t/6+i)*6,B.T-170+Y,2,1,'#b8862a');}}});
-ROOMS2.hof=kRoom('hof',{sig:function(){return happy();},actors:function(){var u=S.up.hof||0;return ['magd','bauer','schmied','haendlerin','kind','moench'].slice(0,2+(u>=2)+(u>=4)+(u>=6)+(u>=8));}});
+ROOMS2.hof=kRoom('hof',{sig:function(){return happy()+'|'+OK.shopLvl(S,'h')+OK.shopLvl(S,'a');},actors:function(){var u=S.up.hof||0;return ['magd','bauer','schmied','haendlerin','kind','moench'].slice(0,2+(u>=2)+(u>=4)+(u>=6)+(u>=8));}});
 function wOk(room){var D=ROOMS2[room];if(!D)return false;var f=D.f();if(D.actors)f=f.concat(D.actors().map(function(n){return 'bew_'+n;}));if(room!=='mauer'&&room!=='karte')f.push('held_s_tunika');return wReady(f);}
 function wDraw(c,room,H,T){var D=ROOMS2[room],B=room==='mauer'||room==='karte'?{T:0,oy:0}:rBand(H,room),sg=room+'|'+H+'|'+B.oy+'|'+(S.up[room]||0)+'|'+D.sig()+'|'+JSON.stringify(S.layout&&S.layout[room]||{}),st=W.st[room];
  if(!st||st.sig!==sg){var cv=mk(360,H),x=cv.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#17110c';x.fillRect(0,0,360,H);WO=[];D.st(x,B.T,H);st=W.st[room]={cv:cv,sig:sg};WO=null;}
