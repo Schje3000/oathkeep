@@ -23,7 +23,7 @@ var CAT=OK.CAT={
  burg:['Holzturm und Palisade','Wachturm und Hütten','Steinerner Bergfried','Erste Steinmauer','Steinburg mit Schmiede','Torhaus und Stadthäuser','Grosse Burg mit Markt','Königliche Festung'],
  thron:['Steinboden, Teppich und Thron','Banner','Fackeln','Säulen','Festtafel','Thronwachen','Wandteppiche und Hofdame','Goldener Thron und Barde'],
  halle:['Küchenschrank','Teppich','Wandbanner','Fackeln','Fässer und Vorräte','Rüstungsständer','Kronleuchter','Hauskatze'],
- turm:['Kerzenleuchter','Kristallkugel','Notenpult','Bücherregal','Sternkarte','Teleskop','Harfe','Zauberspiegel'],
+ turm:['Schwebende Kerzen','Klangkristall','Runenpult','Zauberbücher','Sternkarte','Astrolabium','Resonanzharfe','Zauberspiegel'],
  bib:['Erstes Regal','Zweites Regal','Globus','Drittes Regal','Leseteppich','Bibliotheksleiter','Viertes Regal','Eule'],
  garten:['Zweites Beet','Vogelscheuche','Drittes Beet','Gartenbank','Viertes Beet','Bienenkorb','Apfelbaum','Gartenbrunnen'],
  hof:['Marktstand','Neue Familie','Schmiede','Neue Familie','Bäckerei','Neue Familie','Stall mit Pferd','Maibaum und Fest']};
@@ -44,13 +44,47 @@ var ITEMS=OK.ITEMS={
  kristallkrone:{n:'Kristallkrone',sl:'trophae',r:2,b:{def:3},img:'kristallkrone'},
  baerenfell:{n:'Bärenfell',sl:'moebel',r:0,b:{gold_home:0.05},img:'baerenfell',room:'halle'},exoten:{n:'Exotische Pflanze',sl:'moebel',r:0,b:{gold_water:0.05},img:'exoten',room:'garten'},
  schatztruhe:{n:'Schatztruhe',sl:'moebel',r:1,b:{gold:0.03},img:'schatztruhe',room:'thron'},ritterstatue:{n:'Ritterstatue',sl:'moebel',r:1,b:{def:2},img:'ritterstatue',room:'thron'},
- kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{gold_piano:0.05},img:'kristallleuchte',room:'turm'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{gold:0.05},img:'loewenstatue',room:'hof'}};
+ kristallleuchte:{n:'Kristallleuchte',sl:'moebel',r:1,b:{gold_piano:0.05},img:'kristallleuchte',room:'turm'},
+ drachenei:{n:'Drachenei',sl:'moebel',r:2,b:{def:2},img:'drachenei'},goldbrunnen:{n:'Goldener Brunnen',sl:'moebel',r:2,b:{gold:0.04},img:'goldbrunnen'},
+ einhornstatue:{n:'Einhornstatue',sl:'moebel',r:1,b:{gold_read:0.05},img:'einhornstatue'},kristallbaum:{n:'Kristallbaum',sl:'moebel',r:1,b:{gold_piano:0.05},img:'kristallbaum'},loewenstatue:{n:'Löwenstatue',sl:'moebel',r:2,b:{gold:0.05},img:'loewenstatue',room:'hof'}};
 var RAR=OK.RAR=['gewöhnlich','selten','episch'];
+
+/* ---------- Einrichtung und Händler ----------
+   DEKO: k = boden, wand oder decke; o = I (innen), A (aussen), B (beides); p = Preis beim Händler, 0 = nur als Beute.
+   Gekaufte Stücke liegen in S.deko, Beute-Möbel in S.inv (ITEMS mit sl 'moebel'). Aufgestellt in S.place[raum] = [{id,x,y}]. */
+var DEKO=OK.DEKO={standuhr:{n:'Standuhr',k:'boden',o:'I',p:120},vogelkaefig:{n:'Vogelkäfig',k:'boden',o:'I',p:90},kandelaber:{n:'Kandelaber',k:'boden',o:'I',p:50},kessel:{n:'Hexenkessel',k:'boden',o:'I',p:70},spinnrad:{n:'Spinnrad',k:'boden',o:'I',p:80},schaukelpferd:{n:'Schaukelpferd',k:'boden',o:'I',p:60},sessel:{n:'Lehnsessel',k:'boden',o:'I',p:70},holztruhe:{n:'Holztruhe',k:'boden',o:'B',p:40},topfpflanze:{n:'Topfpflanze',k:'boden',o:'B',p:30},katzenkorb:{n:'Katzenkorb',k:'boden',o:'I',p:60},alchemie:{n:'Alchemietisch',k:'boden',o:'I',p:140},sanduhr:{n:'Sanduhr',k:'boden',o:'I',p:45},buecher:{n:'Bücherstapel',k:'boden',o:'I',p:25},weinregal:{n:'Weinregal',k:'boden',o:'I',p:75},wanduhr:{n:'Kuckucksuhr',k:'wand',o:'I',p:70},spiegel:{n:'Wandspiegel',k:'wand',o:'I',p:40},landschaft:{n:'Landschaftsbild',k:'wand',o:'I',p:60},wandleuchter:{n:'Wandleuchter',k:'wand',o:'I',p:35},tapisserie:{n:'Einhorn-Teppich',k:'wand',o:'I',p:90},traenkebrett:{n:'Tränkebrett',k:'wand',o:'I',p:55},kranz:{n:'Blumenkranz',k:'wand',o:'B',p:30},kerzenkrone:{n:'Kerzenkrone',k:'decke',o:'I',p:100},haengelaterne:{n:'Hängelaterne',k:'decke',o:'B',p:45},blumenampel:{n:'Blumenampel',k:'decke',o:'B',p:35},vogeltraenke:{n:'Vogeltränke',k:'boden',o:'A',p:60},blumenkuebel:{n:'Blumenkübel',k:'boden',o:'A',p:40},wichtel:{n:'Gartenwichtel',k:'boden',o:'A',p:30},windrad:{n:'Windrad',k:'boden',o:'A',p:55},laternenpfahl:{n:'Laternenpfahl',k:'boden',o:'A',p:80},heuballen:{n:'Heuballen',k:'boden',o:'A',p:25},sonnenuhr:{n:'Sonnenuhr',k:'boden',o:'A',p:70},kuerbisse:{n:'Kürbisse',k:'boden',o:'A',p:30},huhn:{n:'Huhn',k:'boden',o:'A',p:40},feuerkorb:{n:'Feuerkorb',k:'boden',o:'A',p:60},wegweiser:{n:'Wegweiser',k:'boden',o:'A',p:35},efeu:{n:'Efeuranke',k:'wand',o:'A',p:30},vogelhaus:{n:'Vogelhaus',k:'wand',o:'A',p:35},fahne:{n:'Wappenfahne',k:'wand',o:'A',p:70},drachenei:{n:'Drachenei',k:'boden',o:'I',p:0},goldbrunnen:{n:'Goldener Brunnen',k:'boden',o:'A',p:0},einhornstatue:{n:'Einhornstatue',k:'boden',o:'B',p:0},kristallbaum:{n:'Kristallbaum',k:'boden',o:'B',p:0},baerenfell:{n:'Bärenfell',k:'wand',o:'I',p:0},exoten:{n:'Exotische Pflanze',k:'boden',o:'B',p:0},schatztruhe:{n:'Schatztruhe',k:'boden',o:'B',p:0},ritterstatue:{n:'Ritterstatue',k:'boden',o:'B',p:0},kristallleuchte:{n:'Kristallleuchte',k:'boden',o:'I',p:0},loewenstatue:{n:'Löwenstatue',k:'boden',o:'A',p:0}};
+OK.ROOMOUT={garten:1,hof:1};
+OK.dekoOwned=function(S){return S.deko.concat(S.inv.filter(function(id){return ITEMS[id]&&ITEMS[id].sl==='moebel'&&DEKO[id];}));};
+OK.dekoFits=function(id,room){var d=DEKO[id];if(!d)return false;return d.o==='B'||(d.o==='A')===!!OK.ROOMOUT[room];};
+OK.dekoWhere=function(S,id){for(var r in S.place){var L=S.place[r]||[];for(var i=0;i<L.length;i++)if(L[i].id===id)return r;}return '';};
+OK.dekoStore=function(S,id){for(var r in S.place)S.place[r]=(S.place[r]||[]).filter(function(q){return q.id!==id;});};
+OK.dekoPlace=function(S,room,id,x,y){if(OK.dekoOwned(S).indexOf(id)<0||!OK.dekoFits(id,room))return false;OK.dekoStore(S,id);
+ (S.place[room]=S.place[room]||[]).push({id:id,x:Math.round(x),y:Math.round(y||0)});return true;};
+OK.dekoMove=function(S,room,id,x,y){var L=S.place[room]||[];for(var i=0;i<L.length;i++)if(L[i].id===id){L[i].x=Math.round(x);if(y!==undefined)L[i].y=Math.round(y);return true;}return false;};
+/* Wochenangebot: 6 Stücke aus dem Händlersortiment, die du noch nicht hast, neu gemischt jeden Montag. */
+OK.shopOpen=function(S){return (S.up.hof||0)>=1;};
+OK.shopWeek=function(now){return Math.floor((weekStart(now)+3*DAY)/(7*DAY));};
+OK.shopOffer=function(S,now){var pool=Object.keys(DEKO).filter(function(id){return DEKO[id].p>0&&S.deko.indexOf(id)<0;}),w=OK.shopWeek(now),seed=w*9301+49297;
+ var rnd=function(){seed=(seed*9301+49297)%233280;return seed/233280;};
+ for(var i=pool.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1)),t=pool[i];pool[i]=pool[j];pool[j]=t;}return pool.slice(0,6);};
+OK.buyDeko=function(S,id,now){var d=DEKO[id];if(!d||!OK.shopOpen(S)||OK.shopOffer(S,now).indexOf(id)<0||S.gold<d.p)return false;S.gold-=d.p;S.deko.push(id);return true;};
+
+/* ---------- Ausrüster (Cosmetics) ----------
+   t = cape (Umhangfarbe), metall (Metallton der Rüstung), pet (Begleiter), outfit (eigene Heldenfassung). Rein optisch, keine Boni. */
+var COS=OK.COS={
+ cape_blau:{n:'Blauer Umhang',t:'cape',p:80},cape_gruen:{n:'Grüner Umhang',t:'cape',p:80},cape_schwarz:{n:'Schwarzer Umhang',t:'cape',p:100},
+ cape_violett:{n:'Violetter Umhang',t:'cape',p:120},cape_gold:{n:'Goldener Umhang',t:'cape',p:180},
+ metall_bronze:{n:'Bronzeton',t:'metall',p:120},metall_schwarz:{n:'Schwarzstahl',t:'metall',p:150},metall_blau:{n:'Blaustahl',t:'metall',p:150},metall_rot:{n:'Rotgold',t:'metall',p:200},
+ pet_hund:{n:'Hund',t:'pet',p:200},pet_katze:{n:'Katze',t:'pet',p:200},pet_fuchs:{n:'Fuchs',t:'pet',p:250},pet_rabe:{n:'Rabe',t:'pet',p:250},
+ outfit_waldlaeufer:{n:'Waldläufer',t:'outfit',p:400},outfit_magier:{n:'Magier',t:'outfit',p:500}};
+OK.cosOpen=function(S){return (S.up.hof||0)>=3;};
+OK.buyCos=function(S,id){var c=COS[id];if(!c||!OK.cosOpen(S)||S.cos.own.indexOf(id)>=0||S.gold<c.p)return false;S.gold-=c.p;S.cos.own.push(id);S.cos[c.t]=id;return true;};
+OK.setCos=function(S,t,id){if(id&&(S.cos.own.indexOf(id)<0||!COS[id]||COS[id].t!==t))return false;S.cos[t]=id||'';return true;};
 
 /* ---------- Spielstand ---------- */
 function fresh(now){var n=now;return{v:1,updatedAt:0,created:n,name:'Held',
  look:{skin:'#e0b08a',hair:'#5b3a22',armor:'#8e9aa0',cape:'none',plume:'none'},
- xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],layout:{},
+ xp:{aus:0,sta:0,kla:0,hau:0,kra:0,wis:0},books:[],stones:5,gold:25,potions:0,buff:false,buffUntil:0,raidN:0,lvlSeen:1,wall:{lvl:1,dmg:0},up:{thron:0,halle:0,turm:0,bib:0,garten:0,hof:0},inv:[],equip:{waffe:'',ruestung:'',talisman:''},loot:[],layout:{},deko:[],place:{},cos:{own:[],cape:'',metall:'',pet:'',outfit:''},
  last:{run:n,gym:n,piano:0,water:n,kueche:n,bad:n,saugen:n,staub:n,bett:n,waesche:0,read:0,book:0},
  log:[],runGoal:50,rest:0,lastRaid:n,raidDue:0,raids:[],
  bosses:[{id:'gp',name:'Der Aarewyrm',goal:'GP von Bern',area:'run',date:'2027-05-15',target:300,dmg:0,done:false,won:false}]};}
