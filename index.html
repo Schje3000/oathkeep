@@ -175,6 +175,26 @@ input,select,textarea{font-size:16px!important}
 #sheet{max-height:48%;min-height:34%}
 .chip.map{gap:6px;padding:0 12px}
 .chip.map span{font-size:18px}
+/* ---------- Waldholz-Stil (PixelLab, assets/ui): 9-Slice-Rahmen in 1 Pixel = 1 CSS-Pixel ---------- */
+#app .b,#app .tab,#app .chip,#app .card,#sheet,#app .tile,#app .bar{image-rendering:pixelated}
+#app .b{border-style:solid;border-width:12px 14px;border-image:url(assets/ui/sec.png) 12 14 fill/12px 14px stretch;background:none;box-shadow:none;border-radius:0;color:#2b1709;text-shadow:0 1px 0 rgba(255,236,190,.45);padding:0 4px;min-height:48px}
+#app .b:active{border-image-source:url(assets/ui/sec_gedrueckt.png);transform:none}
+#app .b.pri{border-width:14px 40px;border-image:url(assets/ui/pri.png) 14 40 fill/14px 40px stretch;background:none;box-shadow:none;color:#f6ead0;text-shadow:0 2px 0 #24400f,0 0 2px #24400f}
+#app .b.pri:active{border-image-source:url(assets/ui/pri_gedrueckt.png)}
+#app .b:disabled,#app .b.pri:disabled{border-width:10px 12px;border-image:url(assets/ui/tab_aus.png) 10 12 fill/10px 12px stretch;filter:brightness(.72) saturate(.6);color:#e8d6b0;text-shadow:0 1px 0 #000}
+#app .tab{border-style:solid;border-width:10px 12px;border-image:url(assets/ui/tab_aus.png) 10 12 fill/10px 12px stretch;background:none;box-shadow:none;border-radius:0;color:#f6ead0;text-shadow:0 2px 0 #1e1108}
+#app .tab[aria-pressed="true"]{border-image-source:url(assets/ui/tab_an.png);background:none;box-shadow:none;color:#2b1709;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+#app .chip{border-style:solid;border-width:10px 22px;border-image:url(assets/ui/schild.png) 10 22 fill/10px 22px stretch;background:none;box-shadow:none;border-radius:0;color:#2b1709;padding:0 2px;min-height:44px;-webkit-backdrop-filter:none;backdrop-filter:none}
+#app .chip .pill{background:#3f6b22;color:#f6ead0;border:2px solid #24400f}
+#app #sheet .card,#app .card{border-style:solid;border-width:10px 12px;border-image:url(assets/ui/tab_aus.png) 10 12/10px 12px stretch;background:#2a1b14;background-clip:padding-box;box-shadow:0 4px 0 rgba(0,0,0,.35);border-radius:0;padding:10px 8px}
+#app #sheet .card.gold,#app .card.gold{border-image-source:url(assets/ui/tab_an.png)}
+#sheet{border-style:solid;border-width:22px 18px 0;border-image:url(assets/ui/rahmen.png) 22 18 0/22px 18px 0 stretch;background:#2a1b14;box-shadow:0 -4px 10px rgba(0,0,0,.35);border-radius:0}
+#app #sheet .tile,#app .tile{border-style:solid;border-width:10px 12px;border-image:url(assets/ui/tab_aus.png) 10 12 fill/10px 12px stretch;background:none;box-shadow:none;border-radius:0;padding:2px 2px}
+#app .bar{background:#231815;border:3px solid #6b4a2c;border-radius:8px;box-shadow:inset 0 2px 0 rgba(0,0,0,.5)}
+#app .bar i{background:repeating-linear-gradient(90deg,#9ed04f 0 14px,rgba(0,0,0,0) 14px 17px);box-shadow:inset 0 3px 0 rgba(235,255,170,.45),inset 0 -3px 0 rgba(40,80,10,.35)}
+#app .chip .zur{width:20px;height:20px;flex:none}
+#app .chip{gap:4px;font-size:19px}
+#app .chip .ic{width:22px;height:22px}
 </style>
 </head>
 <body>
@@ -262,13 +282,18 @@ var nextRaid=OK.nextRaid;
 function raids(){var r=OK.resolveRaids(S,now());if(!r.n)return;var l=r.last,msg=l.win?'Ansturm abgewehrt: +20 Gold'+(l.loot&&(l.loot.items.length||l.loot.gold)?', Beute: '+lootText(l.loot):''):'Die Horde hat die Mauer beschädigt';
  save();setTimeout(function(){toast(msg);},400);}
 
+/* Zurück zur Burg: Knopf, Zurückwischen von Safari (Verlauf) und eigene Wischgeste vom linken Rand (Homescreen-App). */
+var navPushed=false;
+function atHome(){return ui.tab==='burg'&&ui.room==='mauer';}
+function goHome(){ui.tab='burg';ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;}
+function leaveHome(){if(atHome()&&!navPushed){try{history.pushState({oathkeep:1},'');navPushed=true;}catch(e){}}}
 function act(a){var p=a.split(':');
- if(p[0]==='tab'){ui.tab=p[1];ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
+ if(p[0]==='tab'){if(p[1]==='burg'){act('home');return;}leaveHome();ui.tab=p[1];ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='log'){if(p[1]==='run')logAct('run',parseFloat(String(ui.km).replace(',','.')));else if(p[1]==='piano')logAct('piano',parseFloat(ui.min));else if(p[1]==='read')logAct('read',parseFloat(ui.rmin));else logAct(p[1],1);return;}
- if(a==='home'){ui.tab='burg';ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
+ if(a==='home'){if(navPushed){try{history.back();return;}catch(e){}}goHome();return;}
  if(p[0]==='mtab'){ui.mtab=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='more'){ui.more=p[1]==='on'?true:!ui.more;render();return;}
- if(p[0]==='room'){ui.room=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
+ if(p[0]==='room'){leaveHome();ui.room=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='inv'){ui.inv=ui.inv===p[1]?'':p[1];render();return;}
  if(a==='potion'){if(OK.drinkPotion(S,now())){save();render();toast('Trank getrunken: 24 Stunden lang 50 % mehr Gold');}return;}
  if(a==='potion:buy'){var pp=OK.buyPotion(S);if(pp){save();render();toast('Trank gebraut: -'+pp+' Gold');}return;}
@@ -399,7 +424,7 @@ function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" wid
  return h;}
 function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;if(!inRoom)ui.edit=false;
  var cvE=document.getElementById('cv');if(cvE)cvE.style.touchAction=ui.edit?'none':'';
- var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg">'+UI('zurueck')+'Burg</button>';
+ var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg"><svg class="zur" viewBox="0 0 24 24" fill="none" stroke="#2b1709" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4l-8 8 8 8"></path></svg>Burg</button>';
  var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
  var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
  if(home){hud='<button class="chip map'+(0?'':'')+'" data-act="tab:boss" aria-label="Weltkarte">'+UI('karte')+'<span>'+(S.rest?'Rast':Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY))+' T')+'</span></button><span class="grow"></span>'+gc+hero;
@@ -1086,6 +1111,10 @@ function drawExt(c){var t=tick,L=Math.min(5,S.wall.lvl),tw=tower(),i,x,y,R=pen(c
 
 function init(){
  document.getElementById('app').addEventListener('click',function(e){var b=e.target.closest?e.target.closest('[data-act]'):null;if(b&&!b.disabled)act(b.getAttribute('data-act'));});
+ window.addEventListener('popstate',function(){navPushed=false;if(!atHome())goHome();});
+ var sw=null,app=document.getElementById('app');
+ app.addEventListener('touchstart',function(e){var t=e.touches[0];sw=(e.touches.length===1&&t.clientX<32&&!atHome())?{x:t.clientX,y:t.clientY}:null;},{passive:true});
+ app.addEventListener('touchend',function(e){if(!sw)return;var t=e.changedTouches[0],dx=t.clientX-sw.x,dy=Math.abs(t.clientY-sw.y);sw=null;if(dx>70&&dy<60)act('home');},{passive:true});
  var v=document.getElementById('sheet');
  v.addEventListener('input',function(e){var k=e.target.getAttribute('data-in');if(k)ui[k]=e.target.value;});
  v.addEventListener('change',function(e){var el=e.target,n;
