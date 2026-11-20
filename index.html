@@ -203,6 +203,34 @@ input,select,textarea{font-size:16px!important}
 .eqrow .grow{min-width:0}
 .eqrow .grow div{overflow-wrap:anywhere}
 #app .row .b.grow{font-size:19px;min-width:0}
+/* ---------- Waldholz: runde Knöpfe, Zustandsleiste, Weltkarte, Ausbau-Chips ---------- */
+#app .rbtn{border:0;border-image:none;width:44px;height:44px;min-height:44px;padding:0;background:url(assets/ui/rund_leer.png) center/44px 44px no-repeat;image-rendering:pixelated;display:flex;align-items:center;justify-content:center;flex:none;color:#1a0c04;font-family:var(--px);font-size:30px;line-height:1;box-shadow:none;cursor:pointer}
+#app .rbtn.big{width:66px;height:66px;background-size:66px 66px}
+#app .rbtn .ic{width:32px;height:32px;margin:0}
+#app #float{left:10px;right:10px;top:calc(66px + env(safe-area-inset-top));align-items:stretch;pointer-events:none}
+#app #float>*{pointer-events:auto}
+#app .chip.wstat{min-height:72px;padding:0 10px 0 0;gap:2px;justify-content:flex-start}
+#app .wstat .wsi{width:48px;height:48px;margin:0 4px 0 10px;flex:none}
+#app .wstat .wsi.sw{width:64px;height:64px;margin:-8px -4px -8px 2px}
+#app .wst{display:flex;flex-direction:column;gap:2px;min-width:0;line-height:1}
+#app .wst .big{font-size:28px}
+#app .wst .sm{font-size:18px;color:#5a3618;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#app .mapb{position:absolute;right:2px;display:flex;flex-direction:column;align-items:center}
+#app .mapb .chip{min-height:46px;font-size:20px;margin-top:-6px;padding:0 4px}
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.hd .v,.v{font-family:var(--px);font-size:20px;color:#e2c79a;white-space:nowrap}
+.reqs{display:flex;gap:6px;flex-wrap:wrap}
+.req{display:inline-flex;align-items:center;padding:2px 9px;border-radius:99px;font-family:var(--px);font-size:19px}
+.req.ok{background:rgba(158,208,79,.16);color:#b6e06a}
+.req.no{background:rgba(255,157,128,.16);color:#ff9d80}
+.hrow{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px solid rgba(255,255,255,.07)}
+.card>.t+.hrow,.card>.hd+.hrow{border-top:0}
+#app .b.ib{width:48px;padding:0;flex:none;display:flex;align-items:center;justify-content:center}
+.lnk{background:none;border:0;color:#f0cf6a;font-family:var(--px);font-size:19px;min-height:44px;text-align:left;padding:0 4px;cursor:pointer}
+.chk{display:flex;align-items:center;gap:8px;font-size:15px;padding:3px 0}
+.chk b{font-family:var(--px);font-size:22px;font-weight:400;width:18px;text-align:center}
+.sk2{display:grid;grid-template-columns:104px minmax(0,1fr) 30px;align-items:center;gap:8px;margin-top:4px}
+#app .card.cardlink{color:var(--text);font:inherit;text-align:left;cursor:pointer;display:block}
 </style>
 </head>
 <body>
@@ -281,7 +309,7 @@ function toast(m){var t=document.getElementById('toast');t.textContent=m;t.style
 
 function logAct(k,a){var r=OK.logEntry(S,k,a,now(),k==='book'?ui.btitle:'');
  if(!r.ok){toast(r.err==='rest'?'Rast am Lagerfeuer aktiv. Beende sie zuerst.':r.err==='today'?'Heute schon eingetragen.':r.err==='km'?'Bitte Kilometer eingeben.':'Bitte Minuten eingeben.');return;}
- if(k==='book')ui.btitle='';save();render();var K=KIND[k];
+ if(k==='book'){ui.btitle='';ui.bookOpen=false;}save();render();var K=KIND[k];
  toast(r.after>r.before?SK[K.s]+' erreicht Stufe '+r.after+'!':K.n+': +'+r.x+' Ruhm, +'+r.g+' Gold');}
 function undoEntry(t){if(!OK.undoEntry(S,t))return false;save();return true;}
 function undo(){if(!OK.undoLast(S,now())){toast('Nur Einträge von heute lassen sich zurücknehmen.');return;}
@@ -293,7 +321,7 @@ function raids(){var r=OK.resolveRaids(S,now());if(!r.n)return;var l=r.last,msg=
 /* Zurück zur Burg: Knopf, Zurückwischen von Safari (Verlauf) und eigene Wischgeste vom linken Rand (Homescreen-App). */
 var navPushed=false;
 function atHome(){return ui.tab==='burg'&&ui.room==='mauer';}
-function goHome(){ui.tab='burg';ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;}
+function goHome(){ui.tab='burg';ui.room='mauer';ui.confirm='';ui.bau='';render();document.getElementById('sheet').scrollTop=0;}
 function leaveHome(){if(atHome()&&!navPushed){try{history.pushState({oathkeep:1},'');navPushed=true;}catch(e){}}}
 function act(a){var p=a.split(':');
  if(p[0]==='tab'){if(p[1]==='burg'){act('home');return;}leaveHome();ui.tab=p[1];ui.room='mauer';ui.confirm='';render();document.getElementById('sheet').scrollTop=0;return;}
@@ -301,7 +329,12 @@ function act(a){var p=a.split(':');
  if(a==='home'){if(navPushed){try{history.back();return;}catch(e){}}goHome();return;}
  if(p[0]==='mtab'){ui.mtab=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='more'){ui.more=p[1]==='on'?true:!ui.more;render();return;}
- if(p[0]==='room'){leaveHome();ui.room=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
+ if(p[0]==='bau'){ui.bau=p[1]==='zu'?'':p[1];render();document.getElementById('sheet').scrollTop=0;return;}
+ if(p[0]==='htab'){ui.htab=p[1];render();document.getElementById('sheet').scrollTop=0;return;}
+ if(a==='mdet'){ui.mdet=!ui.mdet;render();return;}
+ if(a==='newb'){ui.newb=!ui.newb;render();return;}
+ if(a==='bookopen'){ui.bookOpen=!ui.bookOpen;render();return;}
+ if(p[0]==='room'){leaveHome();ui.room=p[1];ui.bau='';render();document.getElementById('sheet').scrollTop=0;return;}
  if(p[0]==='inv'){ui.inv=ui.inv===p[1]?'':p[1];render();return;}
  if(a==='potion'){if(OK.drinkPotion(S,now())){save();render();toast('Trank getrunken: 24 Stunden lang 50 % mehr Gold');}return;}
  if(a==='potion:buy'){var pp=OK.buyPotion(S);if(pp){save();render();toast('Trank gebraut: -'+pp+' Gold');}return;}
@@ -340,10 +373,174 @@ function act(a){var p=a.split(':');
 function bar(cur,max,g){var p=max>0?Math.max(0,Math.min(100,cur/max*100)):0;return '<div class="bar'+(g?' g':'')+'"><i style="width:'+p+'%"></i></div>';}
 function due(c){var d=OK.choreDue(S,c,now());if(d>=1)return '<span class="s">fällig in '+Math.floor(d)+(Math.floor(d)===1?' Tag':' Tagen')+'</span>';if(d>=0)return '<span class="s" style="color:var(--gold)">heute fällig</span>';return '<span class="s warn">überfällig seit '+Math.ceil(-d)+(Math.ceil(-d)===1?' Tag':' Tagen')+'</span>';}
 
-function sheetStart(RI){var w=S.wall,cost=w.lvl*150,nr=OK.raidDue(S),lr=null,dn=0;
- var h=(w.dmg?'<div class="card"><div class="row">'+UI('schild')+'<div class="grow"><div class="t">Mauerschaden '+w.dmg+'</div><div class="s">Reparatur: 15 Gold pro Schaden. Ausbau erst ohne Schaden.</div></div><button class="b" data-act="wall:fix" '+(S.gold<15?'disabled':'')+'>Reparieren</button></div></div>':'')+vBuild('burg');
- h+='<div class="tiles">'+['garten','halle','turm','thron','hof','bib'].map(function(id){var r=RI[id];return '<button class="tile" data-act="room:'+id+'">'+UI({garten:'garten',halle:'besen',turm:'kristall',thron:'held',hof:'haus',bib:'buch'}[id])+'<b>'+r.k+'</b><span class="'+r.c+'">'+r.s+'</span></button>';}).join('')+'</div>';
+/* ---------- Oberfläche (Waldholz, Anordnung nach Mockup) ---------- */
+var SVG_ZUR='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a0c04" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4l-8 8 8 8"></path></svg>';
+var SVG_RAD='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a0c04" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"></path></svg>';
+var SVG_LOCK='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px;margin-right:6px"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+var SVG_OK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;margin-right:6px"><path d="M4 12l5 5L20 6"></path></svg>';
+var SVG_UNDO='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a0c04" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-3"></path></svg>';
+function dayDiff(ts){var a=new Date(now()),b=new Date(ts);a.setHours(0,0,0,0);b.setHours(0,0,0,0);return Math.round((a-b)/DAY);}
+function agoTxt(ts){if(!ts)return 'noch nie';var d=dayDiff(ts);return d<=0?'heute':d===1?'gestern':'vor '+d+' Tagen';}
+function capF(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function stCol(c){return c==='ok'?'#2f5a14':c==='warn'?'#8a2410':'#7a4a00';}
+function doneT(k){return OK.doneToday(S,k,now());}
+function doneBtn(t){return '<button class="b" disabled>'+SVG_OK+t+'</button>';}
+/* Zustandsleiste unter der Kopfleiste: Symbol, Zustand gross, Einzelheit klein. */
+function stBar(ic,big,c,small){var sw=ic==='schwert';
+ return '<div class="chip wstat" role="status"><img class="ic wsi'+(sw?' sw':'')+'" src="assets/raum/u_'+ic+'.png?v=3" alt=""><span class="wst"><span class="big" style="color:'+stCol(c)+'">'+big+'</span><span class="sm">'+small+'</span></span></div>';}
+function dueTxt(d){return d<0?'überfällig':d<1?'heute fällig':d<2?'morgen fällig':'fällig in '+Math.floor(d)+' Tagen';}
+function roomStat(r,RI){var c=RI[r];
+ if(r==='thron')return stBar('schwert',capF(c.s),c.c,'Letztes Training '+agoTxt(Math.max(S.last.run||0,S.last.gym||0)));
+ if(r==='garten')return stBar('garten',capF(c.s),c.c,'Zuletzt bewässert '+agoTxt(S.last.water));
+ if(r==='halle'){var md=Math.min.apply(null,CHORES.map(function(x){return OK.choreDue(S,x,now());}));return stBar('besen',capF(c.s),c.c,moder()?'Moder breitet sich aus':'Nächste Aufgabe '+dueTxt(md));}
+ if(r==='turm')return stBar('kristall',capF(c.s),c.c,'Letzte Übung '+agoTxt(S.last.piano));
+ if(r==='bib'){var bk=S.books[S.books.length-1];return stBar('buch',capF(c.s),'ok',bk?'Zuletzt vollendet: '+esc(bk.n||'ohne Titel'):'Noch kein Buch vollendet');}
+ if(r==='hof'){var nv=ROOMS2.hof&&ROOMS2.hof.actors?ROOMS2.hof.actors().length:2;return stBar('haus',capF(c.s),c.c,nv+' Bewohner leben in der Burg');}
+ return '';}
+function raidWhen(){var t=new Date(OK.raidDue(S)),dn=Math.max(0,Math.ceil((t.getTime()-now())/DAY));return 'Ansturm in '+dn+(dn===1?' Tag':' Tagen')+', '+['So','Mo','Di','Mi','Do','Fr','Sa'][t.getDay()]+' '+t.getHours()+' Uhr';}
+function mapStat(){if(ui.mtab==='erob'){var la=S.bosses.filter(function(b){return !b.done;}).length,wo=S.bosses.filter(function(b){return b.done&&b.won;}).length;
+  return stBar('karte',la?la+(la===1?' Eroberung läuft':' Eroberungen laufen'):'Keine Eroberung',la?'ok':'',wo+' erobert');}
+ var d=defNow(),ok=d.def>=d.atk;return stBar('schild',S.rest?'Rast':ok?'Bereit':'Nicht bereit',S.rest?'':ok?'ok':'warn',S.rest?'Die Horde wartet':raidWhen());}
+function heroTitle(){return [bossHasWon()?'Eroberer':'',lvl(S.xp.wis)>=6?'Weiser':lvl(S.xp.wis)>=3?'Gelehrter':''].filter(String).join(', ');}
+function heroStat(){var f=fit(),t=heroTitle(),r=S.equip.ruestung&&ITEMS[S.equip.ruestung]?ITEMS[S.equip.ruestung].n:'Tunika';
+ return stBar('held','Stufe '+charLvl()+(t?', '+t:''),'ok','<span style="color:'+stCol(f===0?'ok':f===1?'':'warn')+'">'+['kräftig','müde','geschwächt'][f]+'</span>, '+r);}
+function entTxt(e){return KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'||e.k==='read'?' '+num(e.a)+' Min.':'');}
+
+/* Ausbau: als Karte (Burg auf dem Start) oder als eigene Ansicht über die Stufenanzeige. */
+function vBau(r){var n=upNext(r),i=upLvl(r),max=r==='burg'?7:8;
+ var h='<div class="card"><div class="row">'+UI('hammer')+'<div class="grow"><div class="t">'+(r==='burg'?'Burg: '+CAT.burg[i]:'Ausbau '+i+' von 8')+'</div>'+(n?'<div class="s">Als Nächstes: <b>'+n.n+'</b></div>':'<div class="s">Vollständig ausgebaut.</div>')+'</div></div>'+bar(i,max);
+ if(!n)return h+'</div>';
+ var have=upHave(n),rq=[[have>=n.req,(n.sk?SK[n.sk]:'Stufe')+' '+n.req+(have>=n.req?'':' (du: '+have+')'),(n.sk?SK[n.sk]:'Charakterstufe')+' '+n.req],
+  [S.gold>=n.p,n.p+' Gold'+(S.gold>=n.p?'':' (du: '+S.gold+')'),n.p+' Gold']];
+ if(n.bq&&n.bq>1)rq.push([S.wall.lvl>=n.bq,'Burgstufe '+n.bq+(S.wall.lvl>=n.bq?'':' (du: '+S.wall.lvl+')'),'Burgstufe '+n.bq]);
+ if(r==='burg'&&S.wall.dmg)rq.push([false,'Mauer reparieren','Mauer reparieren']);
+ var miss=rq.filter(function(q){return !q[0];})[0];
+ h+='<div class="reqs">'+rq.map(function(q){return '<span class="req '+(q[0]?'ok':'no')+'">'+(q[0]?'✓ ':'✗ ')+q[1]+'</span>';}).join('')+'</div>';
+ h+=upOk(r)?'<button class="b pri" data-act="build:'+r+'">Bauen für '+n.p+' Gold</button>':'<button class="b" disabled>'+SVG_LOCK+(miss?(miss[2].indexOf('Mauer')===0?miss[2]:'Erst '+miss[2]):'Noch nicht baubar')+'</button>';
+ var nx=r==='burg'?CAT.burg.slice(i+2,i+4):CAT[r].slice(i+1,i+3);if(nx.length)h+='<div class="s">Danach: '+nx.join(', ')+'</div>';
+ return h+'</div>';}
+function vBauSicht(r,name){return '<div class="row">'+UI('hammer')+'<div class="t grow" style="font-size:24px">'+name+' ausbauen</div><button class="rbtn" data-act="bau:zu" aria-label="Schliessen">×</button></div>'+vBau(r);}
+
+function sheetStart(RI){var w=S.wall;
+ var h='<div class="tiles">'+[['garten','GARTEN','garten'],['halle','INNENRAUM','besen'],['turm','TURM','kristall'],['thron','THRONSAAL','schwert'],['hof','INNENHOF','haus'],['bib','BIBLIOTHEK','buch']].map(function(q){var r=RI[q[0]];return '<button class="tile" data-act="room:'+q[0]+'">'+UI(q[2])+'<b>'+q[1]+'</b><span class="'+r.c+'">'+r.s+'</span></button>';}).join('')+'</div>';
+ if(w.dmg)h+='<div class="card"><div class="row">'+UI('schild')+'<div class="grow"><div class="t">Mauerschaden '+w.dmg+'</div><div class="s">Reparatur: 15 Gold pro Schaden. Ausbau erst ohne Schaden.</div></div><button class="b" data-act="wall:fix" '+(S.gold<15?'disabled':'')+'>Reparieren</button></div></div>';
+ return h+vBau('burg');}
+
+function vHist(kinds){var L=S.log.filter(function(e){return kinds.indexOf(e.k)>=0;}).slice(-5).reverse();
+ return '<div class="card"><div class="t">Zuletzt</div>'+(L.length?L.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t),dt=d.getDate()+'.'+(d.getMonth()+1)+'.';
+  return '<div class="hrow"><span class="grow">'+dt+' '+entTxt(e)+' <span class="s">+'+e.x+' Ruhm'+(e.g?', +'+e.g+' Gold':'')+'</span></span>'+(q?'<button class="b sm warnb" data-act="unlog:'+e.t+'">Wirklich?</button>':'<button class="b ib" data-act="unlog:'+e.t+'" aria-label="Eintrag vom '+dt+' zurücknehmen">'+SVG_UNDO+'</button>')+'</div>';}).join(''):'<div class="s">Noch keine Einträge.</div>')+'</div>';}
+
+function vRout(){var C={},pd=pianoDays(),km=monthKm(),tk=ui.ttab==='aus'?'run':'gym',gw=inWeek(['run','gym']).length;
+ C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
+ (tk==='gym'?'<div class="card"><div class="hd"><span class="t">Diese Woche</span><span class="v">'+gw+' von 3 bis 4</span></div>'+bar(gw,4)+(doneT('gym')?doneBtn('Heute trainiert'):'<button class="b pri" data-act="log:gym">Eintragen</button>')+'<div class="s">Waffenübung und Faustkampf, einmal pro Tag. Ausdauertraining zählt mit.</div></div>'
+ :'<div class="card"><div class="hd"><span class="t">Diesen Monat</span><span class="v">'+num(km)+' von '+num(S.runGoal)+' km</span></div>'+bar(km,S.runGoal)+
+ '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Eintragen</button></div></div>')+vHist([tk]);
+ var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;
+ C.thron+='<button class="card cardlink" data-act="tab:held"><span class="row">'+UI('truhe')+'<span class="grow"><span class="t" style="display:block">Ausrüstung und Trophäen</span><span class="s" style="display:block">'+(S.equip.ruestung&&ITEMS[S.equip.ruestung]?ITEMS[S.equip.ruestung].n:'Tunika')+', '+(S.equip.waffe&&ITEMS[S.equip.waffe]?ITEMS[S.equip.waffe].n:'keine Waffe')+', '+ntr+(ntr===1?' Trophäe':' Trophäen')+'</span></span><span class="t">›</span></span></button>';
+ C.turm='<div class="card"><div class="hd"><span class="t">Klang-Magie</span><span class="v">'+pd+' von 5 Tagen</span></div>'+bar(pd,5)+
+ '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="min" value="'+esc(ui.min)+'"></label><div class="grow"></div><button class="b pri" data-act="log:piano">Eintragen</button></div><div class="s">An 5 Tagen pro Woche, je mindestens 15 Minuten.</div></div>'+vHist(['piano']);
+ var gw2=inWeek(['water']).length;
+ C.garten='<div class="card"><div class="hd"><span class="t">Garten bewässern</span><span class="v">'+gw2+' von 2 bis 3</span></div>'+bar(gw2,3)+(doneT('water')?doneBtn('Heute bewässert'):'<button class="b pri" data-act="log:water">Bewässern</button>')+'</div>';
+ var bl=Math.max(0,Math.ceil((S.buffUntil-now())/3600000));
+ C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold.</div></div></div>'+
+ '<div class="row"><button class="b grow" data-act="potion:buy" '+(S.gold>=potPrice()&&S.potions<9?'':'disabled')+'>Brauen</button><button class="b pri grow" data-act="potion" '+(S.potions>0&&!buffOn()?'':'disabled')+'>'+(buffOn()?'Wirkt noch '+bl+' Std.':'Trinken')+'</button></div></div>'+vHist(['water']);
+ var cs=CHORES.slice().sort(function(a,b){return OK.choreDue(S,a,now())-OK.choreDue(S,b,now());}),h='<div class="card"><div class="hd"><span class="t">Burgpflege</span><span class="v">nach Fälligkeit</span></div>';
+ cs.forEach(function(c){var d=doneT(c.k);h+='<div class="hrow"><div class="grow"><div>'+c.n+'</div>'+(d?'<span class="s ok">heute erledigt</span>':due(c))+'</div>'+(d?'<button class="b" disabled>Erledigt</button>':'<button class="b" data-act="log:'+c.k+'">Erledigt</button>')+'</div>';});
+ h+='<div class="hrow"><div class="grow"><div>Gewänder waschen</div><span class="s">ohne festen Rhythmus</span></div><button class="b" data-act="log:waesche">Erledigt</button></div></div>';
+ C.halle=h+vHist(CHORES.map(function(c){return c.k;}).concat(['waesche']));
+ var nb=S.books.length,rt=OK.todayXpOf(S,['read'],now());
+ C.bib='<div class="card"><div class="hd"><span class="t">Schriften studieren</span><span class="v">'+rt+' von 60</span></div>'+bar(rt,60)+
+ '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="rmin" value="'+esc(ui.rmin)+'"></label><div class="grow"></div><button class="b pri" data-act="log:read">Eintragen</button></div><div class="s">Heute höchstens 60 Ruhm aus Schriften.</div></div>'+
+ (ui.bookOpen?'<div class="card"><div class="t">Buch vollendet</div><label>Titel des Buchs<input data-in="btitle" maxlength="60" value="'+esc(ui.btitle)+'"></label><div class="row"><button class="b grow" data-act="bookopen">Abbrechen</button><button class="b pri grow" data-act="log:book">Eintragen</button></div></div>'
+ :'<div class="row" style="padding:0 4px"><span class="s grow">'+nb+(nb===1?' Buch':' Bücher')+' gelesen. Fertig mit einem?</span><button class="b" data-act="bookopen">Buch vollendet</button></div>')+vHist(['read','book']);
+ C.hof='<div class="card"><div class="t">Was die Bewohner brauchen</div>'+[[S.wall.dmg===0,'Mauer ohne Schaden'],[plant()===0,'Garten frisch'],[moder()===0,'Innenraum ohne Moder']].map(function(q){return '<div class="chk"><b class="'+(q[0]?'ok':'warn')+'">'+(q[0]?'✓':'✗')+'</b>'+q[1]+'</div>';}).join('')+'</div>'+vShop()+vCos();
+ return C;}
+
+function defNow(){return OK.defNow(S,now());}
+function vMap(){var today=dkey(OK.now()),now=OK.now(),h='<div class="tabs"><button class="tab" data-act="mtab:ansturm" aria-pressed="'+(ui.mtab==='ansturm')+'">Ansturm</button><button class="tab" data-act="mtab:erob" aria-pressed="'+(ui.mtab==='erob')+'">Eroberungen</button></div>';
+ if(ui.mtab==='ansturm'){var d=defNow(),lr=S.raids[S.raids.length-1],ok=d.def>=d.atk,need=Math.max(0,Math.ceil((d.atk-d.def)/4));
+  h+='<div class="card"><div class="hd"><span class="t">Verteidigung</span><span class="v">'+Math.max(0,d.def)+' gegen '+d.atk+'</span></div>'+bar(Math.max(0,d.def),d.atk,!ok)+
+  '<div class="s">'+(ok?'<span class="ok">Die Burg hält dem Ansturm stand.</span>':'<span class="warn">Es fehlen noch '+need+(need===1?' Eintrag':' Einträge')+' bis zum Ansturm.</span>')+' Die Horde wird jede Woche stärker.</div></div>';
+  h+='<button class="lnk" data-act="mdet">'+(ui.mdet?'Aufschlüsselung schliessen':'So setzt sich die Verteidigung zusammen ›')+'</button>';
+  if(ui.mdet){h+='<div class="card"><div class="hrow"><div class="grow">Mauer Stufe '+S.wall.lvl+'</div><div class="ok">+'+(S.wall.lvl*10)+'</div></div>'+
+  '<div class="hrow"><div class="grow">'+d.n+(d.n===1?' Eintrag':' Einträge')+' diese Woche</div><div class="ok">+'+(d.n*4)+'</div></div>'+
+  (d.m?'<div class="hrow"><div class="grow">Moder: '+d.m+' überfällig</div><div class="warn">-'+(d.m*5)+'</div></div>':'')+
+  (S.wall.dmg?'<div class="hrow"><div class="grow">Mauerschaden '+S.wall.dmg+'</div><div class="warn">-'+(S.wall.dmg*5)+'</div></div>':'')+
+  (d.eq?'<div class="hrow"><div class="grow">Ausrüstung und Trophäen</div><div class="ok">+'+d.eq+'</div></div>':'')+
+  '<div class="s">Jeder Eintrag mit Ruhm zählt 4, jede Mauerstufe 10. Bei einem Sieg gibt es 20 Gold, bei einer Niederlage nimmt die Mauer Schaden.</div>'+
+  (lr?'<div class="s">Letzter Ansturm: '+(lr.win?'<span class="ok">abgewehrt</span>':'<span class="warn">Mauer beschädigt</span>')+' (Verteidigung '+lr.def+' gegen '+lr.atk+')</div>':'')+'</div>';}
+  return h;}
+ S.bosses.forEach(function(b){var A=AREA[b.area],st=b.start||S.created,en=OK.dateEnd(b.date),dl=Math.ceil((en-now)/DAY),rdy=today>=b.date,pr=Math.min(1,b.dmg/b.target),tf=en>st?Math.max(0,Math.min(1,(now-st)/(en-st))):1;
+  h+='<div class="card gold"><div class="hd"><span class="t">'+esc(b.name)+'</span>'+(b.done?'<span class="pill'+(b.won?'':' bad')+'">'+(b.won?'Erobert':'Gescheitert')+'</span>':'<span class="v">bis '+esc(b.date.split('-').reverse().join('.'))+'</span>')+'</div><div class="s">'+esc(b.goal||A.n)+', '+A.n+'</div>';
+  if(b.done){h+='<div class="s">Abgeschlossen mit '+num(b.dmg)+' von '+num(b.target)+' '+A.u+'.</div>'+bar(b.dmg,b.target);}
+  else{h+='<div class="hd"><span class="s">Fortschritt</span><span class="v">'+num(b.dmg)+' von '+num(b.target)+' '+A.u+'</span></div>'+bar(b.dmg,b.target)+
+   '<div class="hd"><span class="s">Zeit</span><span class="v">'+(rdy?'heute ist der Tag':'noch '+dl+(dl===1?' Tag':' Tage'))+'</span></div>'+bar(tf,1,true)+
+   '<div class="s">'+(pr+0.02>=tf?'<span class="ok">Im Plan.</span>':'<span class="warn">Im Rückstand.</span>')+' Fortschritt '+Math.round(pr*100)+' %, Zeit '+Math.round(tf*100)+' % verstrichen.</div>'+
+   '<div class="row"><label>Zielwert ('+A.u+')<input type="number" inputmode="decimal" min="1" data-boss="'+b.id+'" value="'+b.target+'"></label><div class="grow"></div><button class="b pri" data-act="boss:hit:'+b.id+'" '+(rdy?'':'disabled')+'>Abschliessen</button></div>';}
+  h+='<button class="b" data-act="boss:del:'+b.id+'">'+(ui.confirm==='boss:del:'+b.id?'Wirklich löschen?':'Eroberung löschen')+'</button></div>';});
+ if(ui.newb)h+='<div class="card"><div class="t">Neue Eroberung</div><label>Name<input id="bn" maxlength="40" placeholder="zum Beispiel Der Notenwurm"></label><label>Ziel<input id="bg" maxlength="60" placeholder="zum Beispiel ein Stück vorspielen"></label>'+
+ '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Klang-Magie (Minuten)</option><option value="home">Burgpflege (Aufgaben)</option><option value="read">Schriften (Bücher)</option></select></label>'+
+ '<div class="row"><label class="grow">Zeitlimit<input id="bd" type="date"></label><label>Zielwert<input id="bt" type="number" inputmode="decimal" min="1"></label></div><div class="row"><button class="b grow" data-act="newb">Abbrechen</button><button class="b pri grow" data-act="boss:add">Anlegen</button></div></div>';
+ else h+='<button class="b" data-act="newb">Neue Eroberung</button>';
  return h;}
+
+function vEquip(){var h='<div class="card"><div class="t">Ausrüstung</div><div class="s">Rüstung zeigt sich am Helden. Neue Stücke bringen Ansturm und Eroberungen.</div>';
+ var cosOwn=(S.cos&&S.cos.own)||[];if(cosOwn.length){h+='<div class="s" style="margin-top:6px"><b>Aussehen</b></div>';for(var ct in COS_T){var ol=cosOwn.filter(function(id){return OK.COS[id].t===ct;});if(!ol.length)continue;
+  h+='<div class="s">'+COS_T[ct]+'</div><div class="sw2"><button class="b sm'+(S.cos[ct]?'':' pri')+'" data-act="cos:set:'+ct+':">Standard</button>'+ol.map(function(id){return '<button class="b sm'+(S.cos[ct]===id?' pri':'')+'" data-act="cos:set:'+ct+':'+id+'">'+OK.COS[id].n.replace(' Umhang','')+'</button>';}).join('')+'</div>';}}
+ ['ruestung','waffe','talisman'].forEach(function(sl){var id=S.equip[sl],it=id?ITEMS[id]:null,list=S.inv.filter(function(x){return ITEMS[x]&&ITEMS[x].sl===sl;});
+  h+='<div class="row eqrow"><span class="slot">'+(it?'<img src="assets/raum/'+itemIcon(id)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'">':UI(sl==='waffe'?'schwert':sl==='ruestung'?'schild':'trophae'))+'</span><div class="grow"><div><b>'+SLOTN[sl]+':</b> '+(it?'<span style="color:'+RARC[it.r]+'">'+it.n+'</span>':(sl==='ruestung'?'Tunika':'keine'))+'</div><div class="s">'+(it?bonusText(it.b):sl==='ruestung'?'Ohne Rüstung':'Noch nichts angelegt')+'</div></div>'+
+   (list.length?'<button class="b sm" data-act="islot:'+sl+'">'+(ui.islot===sl?'Schliessen':'Wählen ('+list.length+')')+'</button>':'')+'</div>';
+  if(ui.islot===sl){list.forEach(function(x){var t=ITEMS[x];h+='<div class="row eqrow sub"><span class="slot"><img src="assets/raum/'+itemIcon(x)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'"></span><div class="grow"><div style="color:'+RARC[t.r]+'">'+t.n+' <span class="s">('+RAR[t.r]+')</span></div><div class="s">'+bonusText(t.b)+'</div></div>'+
+   (S.equip[sl]===x?'<button class="b sm" data-act="uneq:'+sl+'">Ablegen</button>':'<button class="b sm pri" data-act="eq:'+sl+':'+x+'">Anlegen</button>')+'</div>';});}});
+ return h+'</div>';}
+function vHeld(){var t=ui.htab||'held',h;
+ if(t==='einst')return vEinst();
+ h='<div class="tabs"><button class="tab" data-act="htab:held" aria-pressed="'+(t==='held')+'">Held</button><button class="tab" data-act="htab:samml" aria-pressed="'+(t==='samml')+'">Sammlung</button><button class="tab" data-act="htab:chronik" aria-pressed="'+(t==='chronik')+'">Chronik</button></div>';
+ if(t==='held'){var cp=charProg();h+='<div class="card"><div class="hd"><span class="t">Stufe '+cp.l+'</span><span class="v">'+cp.cur+' von '+cp.need+' Ruhm</span></div>'+bar(cp.cur,cp.need,true)+'</div>';
+  h+='<div class="card"><div class="t">Fertigkeiten</div>';for(var k in SK){var p=lvlProg(S.xp[k]);h+='<div class="sk2"><span>'+SK[k]+'</span>'+bar(p.cur,p.need)+'<span class="v" style="text-align:right">'+p.l+'</span></div>';}
+  h+='</div>'+vEquip();return h;}
+ if(t==='samml'){h+='<div class="card"><div class="t">Sammlung</div><div class="s">Trophäen stärken die Verteidigung, Einrichtung bringt mehr Gold. Beides wirkt, sobald du es besitzt.</div><div class="grid">';
+  Object.keys(ITEMS).filter(function(x){return ITEMS[x].sl==='trophae'||ITEMS[x].sl==='moebel';}).forEach(function(x){var it=ITEMS[x],o=own(x);
+   h+='<div class="gi'+(o?'':' lock')+'" title="'+it.n+'"><img src="assets/raum/'+itemIcon(x)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'"><span>'+(o?it.n:'?')+'</span><small>'+(o?bonusText(it.b):RAR[it.r])+'</small></div>';});
+  return h+'</div></div>';}
+ var last=S.log.slice(-10).reverse();
+ h+='<div class="card"><div class="t">Verlauf</div>'+(last.length?last.map(function(e){var d=new Date(e.t);return '<div class="hrow"><span class="v" style="width:52px">'+d.getDate()+'.'+(d.getMonth()+1)+'.</span><span class="grow">'+entTxt(e)+'</span><span class="s">+'+e.x+'</span></div>';}).join('')+'<button class="b" data-act="undo">Letzten Eintrag zurücknehmen</button>':'<div class="s">Noch keine Einträge.</div>')+'</div>';
+ if(S.loot.length)h+='<div class="card"><div class="t">Beute und Anstürme</div>'+S.loot.slice(-6).reverse().map(function(e){var d=new Date(e.t);return '<div class="hrow"><span class="v" style="width:52px">'+d.getDate()+'.'+(d.getMonth()+1)+'.</span><span class="grow">'+(e.src==='raid'?'Ansturm abgewehrt':'Eroberung')+(lootText(e)?': '+lootText(e):'')+'</span></div>';}).join('')+'</div>';
+ return h;}
+function vEinst(){var km=monthKm();
+ return '<div class="row"><div class="t grow" style="font-size:24px">Einstellungen</div><button class="rbtn" data-act="htab:held" aria-label="Schliessen">×</button></div>'+
+ '<div class="card"><label>Name des Helden<input data-name maxlength="24" value="'+esc(S.name)+'"></label><label>Ausdauertraining pro Monat (km)<input type="number" inputmode="decimal" min="1" data-goal value="'+S.runGoal+'"></label><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km. Speicherung: '+(sync==='konto'?'in deinem Konto, auf allen Geräten':'nur in diesem Browser')+'.</div></div>'+
+ '<div class="card"><div class="t">Rast am Lagerfeuer</div><div class="s">Bei Krankheit oder Ferien: Die Zeit ruht und die Horde wartet. Solange du rastest, gibt es keinen Ruhm.</div><button class="b'+(S.rest?' pri':'')+'" data-act="rest">'+(S.rest?'Rast beenden':'Rast beginnen')+'</button></div>'+
+ '<div class="card"><div class="t">Sicherung</div><div class="s">Spielstand als Text kopieren und auf einem anderen Gerät wieder laden.</div><textarea id="exp" readonly rows="3" aria-label="Spielstand als Text">'+esc(JSON.stringify(S))+'</textarea><button class="b" data-act="copy">Kopieren</button>'+
+ '<label>Sicherung einfügen<textarea rows="3" data-in="imp"></textarea></label><button class="b" data-act="import">Laden</button>'+
+ '<button class="b warnb" data-act="reset">'+(ui.confirm==='reset'?'Wirklich alles löschen?':'Spielstand zurücksetzen')+'</button></div>';}
+
+function placeMap(){var mb=document.getElementById('mapb'),sh=document.getElementById('sheet'),fl=document.getElementById('float');if(!mb||!sh||!fl)return;mb.style.top=Math.max(90,sh.offsetTop-fl.offsetTop-mb.offsetHeight-12)+'px';}
+function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;if(!inRoom){ui.edit=false;ui.bau='';}
+ var cvE=document.getElementById('cv');if(cvE)cvE.style.touchAction=ui.edit?'none':'';
+ var back='<button class="rbtn" data-act="home" aria-label="Zurück zur Burg">'+SVG_ZUR+'</button>';
+ var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh,cls;
+ var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
+ if(home){hud='<span class="logo">Oathkeep</span><span class="grow"></span>'+(S.rest?'<span class="chip">Rast</span>':'')+gc+hero;
+  var dn=Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY)),mt=S.rest?'Rast':dn+(dn===1?' Tag':' Tage');
+  fl='<div class="mapb" id="mapb"><button class="rbtn big" data-act="tab:boss" aria-label="Weltkarte, Ansturm in '+mt+'">'+UI('karte')+'</button><span class="chip">'+mt+'</span></div>';
+  sh=sheetStart(RI);cls='';}
+ else if(inRoom){hud=back+'<button class="chip" data-act="bau:'+ui.room+'" aria-label="'+cur.n+' ausbauen">'+cur.n+'<span class="pill">'+upLvl(ui.room)+'/8</span>'+UI('hammer')+'</button><span class="grow"></span>'+gc;
+  fl=roomStat(ui.room,RI);cls='room';
+  if(ui.bau){sh=vBauSicht(ui.room,cur.n);cls='';}
+  else if(ui.edit&&KIT[ui.room])sh='<div class="card"><div class="t">Einrichten</div><div class="s">Ziehe Möbel entlang des Bodens. Wandschmuck verschiebst du frei an der Wand. Tippe ein Stück aus dem Lager an, um es zurückzulegen.</div>'+
+   '<div class="row"><button class="b grow" data-act="edit:reset">'+(ui.confirm==='edit:reset'?'Wirklich?':'Grundform')+'</button><button class="b pri grow" data-act="edit:off">Fertig</button></div></div>'+vLager(ui.room);
+  else sh=(vRout()[ui.room]||'')+
+   (KIT[ui.room]?'<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Einrichten</div><div class="s">Möbel und Wandschmuck selbst platzieren.</div></div><button class="b" data-act="edit:on">Einrichten</button></div></div>':'')+
+   '<div class="s" style="padding:0 4px">'+cur.d+'</div>';}
+ else if(ui.tab==='boss'){hud=back+'<span class="chip">Weltkarte</span><span class="grow"></span>'+gc;fl=mapStat();sh=vMap();cls='room';}
+ else{hud=back+'<span class="chip">Held</span><span class="grow"></span>'+(ui.htab==='einst'?'':'<button class="rbtn" data-act="htab:einst" aria-label="Einstellungen und Sicherung">'+SVG_RAD+'</button>');
+  fl=ui.htab==='einst'?'':heroStat();sh=vHeld();cls=ui.htab==='einst'?'full':'';}
+ var cl=charLvl();if(cl>S.lvlSeen){var nw=[];['burg','thron','hof'].forEach(function(r){var n=upNext(r);if(n&&!n.sk&&n.req<=cl&&n.req>S.lvlSeen)nw.push(n.n+' ('+n.p+' Gold)');});
+  sh='<div class="card lvl">'+UI('held')+'<div class="t big">Stufe '+cl+' erreicht!</div><div class="s">Dein Ruhm wächst. Die Horde wird stärker, aber deine Burg auch.</div>'+(nw.length?'<div class="s">Jetzt baubar: '+nw.join(', ')+'</div>':'')+'<button class="b pri" data-act="lvlok">Weiter</button></div>'+sh;}
+ document.getElementById('hud').innerHTML=hud;document.getElementById('float').innerHTML=fl;
+ var se=document.getElementById('sheet');se.innerHTML=sh;se.className=cls;
+ testIds();fitCv();draw();drawPv();placeMap();}
 
 
 function dkIco(id){return '<img class="dk" src="assets/raum/k_deko_'+id+'.png?v=4" alt="" onerror="this.style.visibility=\'hidden\'">';}
@@ -382,64 +579,7 @@ function vLager(r){var own=OK.dekoOwned(S).filter(function(id){return OK.dekoFit
  frei.forEach(function(id){var d=OK.DEKO[id],wo=OK.dekoWhere(S,id),RN={halle:'Innenraum',thron:'Thronsaal',turm:'Zauberturm',bib:'Bibliothek',garten:'Burggarten',hof:'Innenhof'};
   h+='<div class="row eqrow"><span class="slot">'+dkIco(id)+'</span><div class="grow"><div>'+d.n+'</div><div class="s">'+(wo?'steht im '+RN[wo]:'im Lager')+'</div></div><button class="b sm pri" data-act="dk:put:'+id+'">Aufstellen</button></div>';});
  return h+'</div>';}
-function vHist(kinds){var L=S.log.filter(function(e){return kinds.indexOf(e.k)>=0;}).slice(-5).reverse();
- return '<div class="card"><div class="t">Zuletzt</div>'+(L.length?'<ul class="log tlog">'+L.map(function(e){var d=new Date(e.t),q=ui.unc===String(e.t);
-  return '<li><span class="grow">'+d.getDate()+'.'+(d.getMonth()+1)+'. '+KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'||e.k==='read'?' '+num(e.a)+' Min.':'')+', +'+e.x+' Ruhm'+(e.g?', +'+e.g+' Gold':'')+'</span><button class="b sm'+(q?' warnb':'')+'" data-act="unlog:'+e.t+'">'+(q?'Wirklich?':'Zurücknehmen')+'</button></li>';}).join('')+'</ul>':'<div class="s">Noch keine Einträge.</div>')+'</div>';}
-function vRout(){var sp=inWeek(['run','gym']).length,km=monthKm(),pd=pianoDays(),pl=plant(),last=S.log.slice(-6).reverse();
- var C={hof:''},gw=inWeek(['run','gym']).length,tk=ui.ttab==='aus'?'run':'gym';
- C.thron='<div class="tabs"><button class="tab" data-act="ttab:kampf" aria-pressed="'+(tk==='gym')+'">Kampftraining</button><button class="tab" data-act="ttab:aus" aria-pressed="'+(tk==='run')+'">Ausdauertraining</button></div>'+
- (tk==='gym'?'<div class="card"><div class="t">Kampftraining</div><div class="s">Waffenübung und Faustkampf. Training diese Woche, Ausdauertraining mitgezählt: '+gw+' von 3 bis 4 Einheiten</div>'+bar(gw,4)+
- '<button class="b pri" data-act="log:gym">Kampftraining eintragen</button></div>'
- :'<div class="card"><div class="t">Ausdauertraining</div><div class="s">Diesen Monat: '+num(km)+' von '+num(S.runGoal)+' km</div>'+bar(km,S.runGoal)+
- '<div class="row"><label>Kilometer<input type="number" inputmode="decimal" step="0.1" min="0" data-in="km" value="'+esc(ui.km)+'"></label><div class="grow"></div><button class="b pri" data-act="log:run">Lauf eintragen</button></div></div>')+
- vHist([tk]);
- C.turm='<div class="card"><div class="t">Klang-Magie</div><div class="s">Diese Woche: '+pd+' von 5 Tagen, je mindestens 15 Minuten</div>'+bar(pd,5)+
- '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="min" value="'+esc(ui.min)+'"></label><div class="grow"></div><button class="b pri" data-act="log:piano">Übung eintragen</button></div></div>';
- C.garten='<div class="card"><div class="row"><div class="grow"><div class="t">Garten bewässern</div><div class="s">Garten: <span class="'+(pl?'warn':'ok')+'">'+['frisch','welk','verdorrt','verrottet'][pl]+'</span>, Ziel 2 bis 3 Mal pro Woche</div></div><button class="b pri" data-act="log:water">Bewässert</button></div></div>';
- var h='<div class="card"><div class="t">Burgpflege</div>';
- CHORES.forEach(function(c){h+='<div class="row"><div class="grow"><div>'+c.n+'</div>'+due(c)+'</div><button class="b" data-act="log:'+c.k+'">Erledigt</button></div>';});
- h+='<div class="row"><div class="grow"><div>Gewänder waschen</div><span class="s">ohne festen Rhythmus</span></div><button class="b" data-act="log:waesche">Erledigt</button></div></div>';C.halle=h;
- var nb=S.books.length;C.bib='<div class="card"><div class="t">Bibliothek</div><div class="s">'+nb+(nb===1?' Buch':' Bücher')+' gelesen'+(nb?', zuletzt: '+esc(S.books.slice(-3).reverse().map(function(b){return b.n||'ohne Titel';}).join(', ')):'')+'</div>'+
- '<div class="row"><label>Minuten<input type="number" inputmode="numeric" step="5" min="1" data-in="rmin" value="'+esc(ui.rmin)+'"></label><div class="grow"></div><button class="b pri" data-act="log:read">Schriften studieren</button></div>'+
- '<div class="row"><label class="grow">Titel des Buchs<input data-in="btitle" maxlength="60" value="'+esc(ui.btitle)+'"></label></div><button class="b" data-act="log:book">Buch vollendet</button></div>';
- C.log='<div class="card"><div class="t">Verlauf</div>'+(last.length?'<ul class="log">'+last.map(function(e){var d=new Date(e.t);return '<li>'+d.getDate()+'.'+(d.getMonth()+1)+'. '+KIND[e.k].n+(e.k==='run'?' '+num(e.a)+' km':e.k==='piano'?' '+num(e.a)+' Min.':'')+', +'+e.x+' Ruhm</li>';}).join('')+'</ul><button class="b" data-act="undo">Letzten Eintrag zurücknehmen</button>':'<div class="s">Noch keine Einträge.</div>')+'</div>';
- var tro=S.bosses.filter(function(b){return b.done;}),un=0,tot=0,g;
- for(g in LOOK)LOOK[g].forEach(function(o){if(o[1]){tot++;if(unlocked(o))un++;}});
- var ntr=S.inv.filter(function(id){return ITEMS[id].sl==='trophae';}).length;C.thron+='<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Ausrüstung und Trophäen</div><div class="s">'+['waffe','ruestung','talisman'].map(function(sl){var id=S.equip[sl];return SLOTN[sl]+': '+(id?ITEMS[id].n:'keine');}).join(', ')+'. '+ntr+(ntr===1?' Trophäe':' Trophäen')+', '+S.inv.length+' Beutestücke.</div></div></div><button class="b" data-act="tab:held">Ausrüstung ansehen</button></div>';
- var bl=Math.max(0,Math.ceil((S.buffUntil-now())/3600000));C.garten+='<div class="card"><div class="row">'+UI('trank')+'<div class="grow"><div class="t">Tränke: '+S.potions+'</div><div class="s">Ein Trank gibt 24 Stunden lang 50 % mehr Gold. Brauen kostet '+potPrice()+' Gold, mit mehr Kräuterkunde weniger.</div></div></div>'+
- '<div class="row"><button class="b grow" data-act="potion:buy" '+(S.gold>=potPrice()&&S.potions<9?'':'disabled')+'>Brauen</button><button class="b pri grow" data-act="potion" '+(S.potions>0&&!buffOn()?'':'disabled')+'>'+(buffOn()?'Wirkt noch '+bl+' Std.':'Trinken')+'</button></div></div>';
- var HK={halle:CHORES.map(function(c){return c.k;}).concat(['waesche']),turm:['piano'],garten:['water'],bib:['read','book']};
- for(var hk in HK)C[hk]=(C[hk]||'')+vHist(HK[hk]);
- C.hof=(C.hof||'')+vShop()+vCos();
- ['thron','halle','turm','bib','garten','hof'].forEach(function(r){C[r]=(C[r]||'')+vBuild(r);});
- return C;}
 
-function defNow(){return OK.defNow(S,now());}
-function vMap(){var today=dkey(OK.now()),now=OK.now(),h='<div class="tabs"><button class="tab" data-act="mtab:ansturm" aria-pressed="'+(ui.mtab==='ansturm')+'">Ansturm</button><button class="tab" data-act="mtab:erob" aria-pressed="'+(ui.mtab==='erob')+'">Eroberungen</button></div>';
- if(ui.mtab==='ansturm'){var d=defNow(),dn=Math.max(0,Math.ceil((d.nr-now)/DAY)),lr=S.raids[S.raids.length-1],ok=d.def>=d.atk,need=Math.max(0,Math.ceil((d.atk-d.def)/4));
-  h+='<div class="card"><div class="row"><div class="grow"><div class="t">Ansturm der Horde</div><div class="s">'+(S.rest?'Pausiert, solange die Rast läuft.':'Sonntag 20 Uhr, in '+dn+(dn===1?' Tag':' Tagen'))+'</div></div><span class="pill'+(ok?'':' bad')+'">'+(ok?'Bereit':'Nicht bereit')+'</span></div>'+
-  '<div class="s">Verteidigung: '+Math.max(0,d.def)+' von '+d.atk+' nötig</div>'+bar(Math.max(0,d.def),d.atk,!ok)+
-  '<div class="s">'+(ok?'<span class="ok">Die Burg hält dem Ansturm stand.</span>':'<span class="warn">Es fehlen noch '+need+(need===1?' Eintrag':' Einträge')+' bis Sonntag.</span>')+'</div></div>';
-  h+='<div class="card"><div class="t">So setzt sich die Verteidigung zusammen</div>'+
-  '<div class="row"><div class="grow">Mauer Stufe '+S.wall.lvl+'</div><div class="ok">+'+(S.wall.lvl*10)+'</div></div>'+
-  '<div class="row"><div class="grow">'+d.n+(d.n===1?' Eintrag':' Einträge')+' diese Woche</div><div class="ok">+'+(d.n*4)+'</div></div>'+
-  (d.m?'<div class="row"><div class="grow">Moder: '+d.m+' überfällig</div><div class="warn">-'+(d.m*5)+'</div></div>':'')+
-  (S.wall.dmg?'<div class="row"><div class="grow">Mauerschaden '+S.wall.dmg+'</div><div class="warn">-'+(S.wall.dmg*5)+'</div></div>':'')+
-  (d.eq?'<div class="row"><div class="grow">Ausrüstung</div><div class="ok">+'+d.eq+'</div></div>':'')+'<div class="s">Jeder Eintrag zählt 4, jede Mauerstufe 10. Die Horde wird jede Woche stärker. Bei einem Sieg gibt es 20 Gold, bei einer Niederlage nimmt die Mauer Schaden.</div>'+
-  (lr?'<div class="s">Letzter Ansturm: '+(lr.win?'<span class="ok">abgewehrt</span>':'<span class="warn">Mauer beschädigt</span>')+' (Verteidigung '+lr.def+' gegen '+lr.atk+')</div>':'')+'</div>';
-  return h;}
- S.bosses.forEach(function(b){var A=AREA[b.area],st=b.start||S.created,en=OK.dateEnd(b.date),dl=Math.ceil((en-now)/DAY),rdy=today>=b.date,pr=Math.min(1,b.dmg/b.target),tf=en>st?Math.max(0,Math.min(1,(now-st)/(en-st))):1;
-  h+='<div class="card gold"><div class="row"><div class="grow"><div class="t">'+esc(b.name)+'</div><div class="s">'+esc(b.goal||A.n)+', bis '+esc(b.date.split('-').reverse().join('.'))+'</div></div>'+(b.done?'<span class="pill'+(b.won?'':' bad')+'">'+(b.won?'Erobert':'Gescheitert')+'</span>':'')+'</div>';
-  if(b.done){h+='<div class="s">Abgeschlossen mit '+num(b.dmg)+' von '+num(b.target)+' '+A.u+'.</div>'+bar(b.dmg,b.target);}
-  else{h+='<div class="s">Fortschritt: '+num(b.dmg)+' von '+num(b.target)+' '+A.u+'</div>'+bar(b.dmg,b.target)+
-   '<div class="s">Zeitlimit: '+(rdy?'heute ist der Tag':'noch '+dl+(dl===1?' Tag':' Tage'))+'</div>'+bar(tf,1,true)+
-   '<div class="s">'+(pr+0.02>=tf?'<span class="ok">Im Plan.</span>':'<span class="warn">Im Rückstand.</span>')+' Fortschritt '+Math.round(pr*100)+' %, Zeit '+Math.round(tf*100)+' % verstrichen. Zählt Einträge im Bereich '+A.n+'.</div>'+
-   '<div class="row"><label>Zielwert ('+A.u+')<input type="number" inputmode="decimal" min="1" data-boss="'+b.id+'" value="'+b.target+'"></label><div class="grow"></div><button class="b pri" data-act="boss:hit:'+b.id+'" '+(rdy?'':'disabled')+'>Abschliessen</button></div>';}
-  h+='<button class="b" data-act="boss:del:'+b.id+'">'+(ui.confirm==='boss:del:'+b.id?'Wirklich löschen?':'Eroberung löschen')+'</button></div>';});
- h+='<div class="card"><div class="t">Neue Eroberung</div><label>Name<input id="bn" maxlength="40" placeholder="zum Beispiel Der Notenwurm"></label><label>Ziel<input id="bg" maxlength="60" placeholder="zum Beispiel ein Stück auswendig vorspielen"></label>'+
- '<label>Bereich<select id="ba"><option value="run">Ausdauertraining (Kilometer)</option><option value="gym">Kampftraining (Einheiten)</option><option value="piano">Klang-Magie (Minuten)</option><option value="home">Burgpflege (Aufgaben)</option><option value="read">Schriften (Bücher)</option></select></label>'+
- '<div class="row"><label class="grow">Zeitlimit<input id="bd" type="date"></label><label>Zielwert<input id="bt" type="number" inputmode="decimal" min="1"></label></div><button class="b pri" data-act="boss:add">Eroberung anlegen</button></div>';
- return h;}
 function icon(rows,pal){var o='<svg viewBox="0 0 8 8" width="30" height="30" shape-rendering="crispEdges" aria-hidden="true">';rows.forEach(function(r,y){for(var x=0;x<8;x++){if(r[x]!=='.')o+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="'+pal[r[x]]+'"/>';}});return o+'</svg>';}
 function UI(n){return '<img class="ic" src="assets/raum/u_'+n+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'">';}
 var IC={stone:icon(['........','..aaa...','.aabba..','.abbbaa.','aabbbbba','abbbbbba','.aaaaaa.','........'],{a:'#6f6857',b:'#b0a890'}),
@@ -447,55 +587,6 @@ var IC={stone:icon(['........','..aaa...','.aabba..','.abbbaa.','aabbbbba','abbb
  potion:icon(['...cc...','...aa...','...aa...','..abba..','.abbbba.','.abbwba.','.abbbba.','..aaaa..'],{a:'#cfd8c4',b:'#d9482e',c:'#7a5230',w:'#f4a08a'}),
  trophy:icon(['.aaaaaa.','a.aaaa.a','a.aaaa.a','.aaaaaa.','..aaaa..','...aa...','..aaaa..','.bbbbbb.'],{a:'#E8C860',b:'#7a5230'}),
  gear:icon(['..aaaa..','.aaaaaa.','.abbbba.','.a.bb.a.','.aabbaa.','.aaaaaa.','..a..a..','........'],{a:'#aeb8bd',b:'#16261A'})};
-function vHeld(){var f=fit(),h='<div class="card"><canvas id="pv" class="pv" width="144" height="128" role="img" aria-label="Vorschau deines Helden"></canvas>'+
- '<div class="s" style="text-align:center">Stufe '+charLvl()+', '+([bossHasWon()?'Eroberer':'',lvl(S.xp.wis)>=6?'Weiser':lvl(S.xp.wis)>=3?'Gelehrter':''].filter(String).join(', ')||'noch ohne Titel')+', Zustand: <span class="'+(f===0?'ok':f===1?'':'warn')+'">'+['kräftig','müde','geschwächt'][f]+'</span></div>'+
- '<label>Name<input data-name maxlength="24" value="'+esc(S.name)+'"></label>';
- h+='</div><div class="card"><div class="t">Ausrüstung</div><div class="s">Rüstung zeigt sich am Helden. Neue Stücke bringen Ansturm und Eroberungen.</div>';
- var cosOwn=(S.cos&&S.cos.own)||[];if(cosOwn.length){h+='<div class="s" style="margin-top:6px"><b>Aussehen</b></div>';for(var ct in COS_T){var ol=cosOwn.filter(function(id){return OK.COS[id].t===ct;});if(!ol.length)continue;
-  h+='<div class="s">'+COS_T[ct]+'</div><div class="sw2"><button class="b sm'+(S.cos[ct]?'':' pri')+'" data-act="cos:set:'+ct+':">Standard</button>'+ol.map(function(id){return '<button class="b sm'+(S.cos[ct]===id?' pri':'')+'" data-act="cos:set:'+ct+':'+id+'">'+OK.COS[id].n.replace(' Umhang','')+'</button>';}).join('')+'</div>';}}
- ['ruestung','waffe','talisman'].forEach(function(sl){var id=S.equip[sl],it=id?ITEMS[id]:null,list=S.inv.filter(function(x){return ITEMS[x]&&ITEMS[x].sl===sl;});
-  h+='<div class="row eqrow"><span class="slot">'+(it?'<img src="assets/raum/'+itemIcon(id)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'">':UI(sl==='waffe'?'schwert':sl==='ruestung'?'schild':'trophae'))+'</span><div class="grow"><div><b>'+SLOTN[sl]+':</b> '+(it?'<span style="color:'+RARC[it.r]+'">'+it.n+'</span>':(sl==='ruestung'?'Tunika':'keine'))+'</div><div class="s">'+(it?bonusText(it.b):sl==='ruestung'?'Ohne Rüstung':'Noch nichts angelegt')+'</div></div>'+
-   (list.length?'<button class="b sm" data-act="islot:'+sl+'">'+(ui.islot===sl?'Schliessen':'Wählen ('+list.length+')')+'</button>':'')+'</div>';
-  if(ui.islot===sl){list.forEach(function(x){var t=ITEMS[x];h+='<div class="row eqrow sub"><span class="slot"><img src="assets/raum/'+itemIcon(x)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'"></span><div class="grow"><div style="color:'+RARC[t.r]+'">'+t.n+' <span class="s">('+RAR[t.r]+')</span></div><div class="s">'+bonusText(t.b)+'</div></div>'+
-   (S.equip[sl]===x?'<button class="b sm" data-act="uneq:'+sl+'">Ablegen</button>':'<button class="b sm pri" data-act="eq:'+sl+':'+x+'">Anlegen</button>')+'</div>';});}});
- h+='</div><div class="card"><div class="t">Sammlung</div><div class="s">Trophäen stärken die Verteidigung, Einrichtung bringt mehr Gold. Beides wirkt, sobald du es besitzt.</div><div class="grid">';
- Object.keys(ITEMS).filter(function(x){return ITEMS[x].sl==='trophae'||ITEMS[x].sl==='moebel';}).forEach(function(x){var t=ITEMS[x],o=own(x);
-  h+='<div class="gi'+(o?'':' lock')+'" title="'+t.n+'"><img src="assets/raum/'+itemIcon(x)+'.png?v=3" alt="" onerror="this.style.visibility=\'hidden\'"><span>'+(o?t.n:'?')+'</span><small>'+(o?bonusText(t.b):RAR[t.r])+'</small></div>';});
- h+='</div></div>';
- if(S.loot.length)h+='<div class="card"><div class="t">Zuletzt erbeutet</div><ul class="log">'+S.loot.slice(-6).reverse().map(function(e){var d=new Date(e.t);return '<li>'+d.getDate()+'.'+(d.getMonth()+1)+'. '+(e.src==='raid'?'Ansturm':'Eroberung')+': '+(lootText(e)||'nichts')+'</li>';}).join('')+'</ul></div>';
- h+='<div class="card">';
- h+='</div>';
- h+=vRout().log;
- h+='<div class="card"><div class="t">Rast am Lagerfeuer</div><div class="s">Bei Krankheit oder Ferien: Die Zeit ruht und die Horde wartet. Solange du rastest, gibt es keinen Ruhm.</div><button class="b'+(S.rest?' pri':'')+'" data-act="rest">'+(S.rest?'Rast beenden':'Rast beginnen')+'</button></div>';
- h+='<div class="card"><div class="t">Fertigkeiten</div>';
- for(var k in SK){var p=lvlProg(S.xp[k]);h+='<div><div class="row" style="margin-bottom:6px"><div class="grow">'+SK[k]+'</div><div class="s">Stufe '+p.l+', '+p.cur+' / '+p.need+'</div></div>'+bar(p.cur,p.need)+'</div>';}
- h+='</div><div class="card"><div class="t">Einstellungen</div><div class="row"><label>Ausdauertraining pro Monat (km)<input type="number" inputmode="decimal" min="1" data-goal value="'+S.runGoal+'"></label></div>'+
- '<div class="s">Speicherung: '+(sync==='konto'?'in deinem Konto, auf allen Geräten verfügbar':'nur in diesem Browser')+'</div></div>';
- h+='<div class="card"><div class="t">Sicherung</div><textarea id="exp" readonly rows="3" aria-label="Spielstand als Text">'+esc(JSON.stringify(S))+'</textarea><button class="b" data-act="copy">Sicherung kopieren</button>'+
- '<label>Sicherung einfügen<textarea rows="3" data-in="imp"></textarea></label><button class="b" data-act="import">Sicherung laden</button>'+
- '<button class="b" data-act="reset">'+(ui.confirm==='reset'?'Wirklich alles löschen?':'Spielstand zurücksetzen')+'</button></div>';
- return h;}
-function render(){var RI=ROOMINFO(),home=ui.tab==='burg'&&ui.room==='mauer',inRoom=ui.tab==='burg'&&!home,cur=RI[ui.room]||RI.mauer;if(!inRoom)ui.edit=false;
- var cvE=document.getElementById('cv');if(cvE)cvE.style.touchAction=ui.edit?'none':'';
- var back='<button class="chip" data-act="home" aria-label="Zurück zur Burg"><svg class="zur" viewBox="0 0 24 24" fill="none" stroke="#2b1709" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4l-8 8 8 8"></path></svg>Burg</button>';
- var hero='<button class="chip" data-act="tab:held" aria-label="Held und Ausrüstung öffnen">'+UI('held')+'Stufe '+charLvl()+'</button>',hud,fl='',sh;
- var gc='<span class="chip gold" aria-label="Gold">'+UI('gold')+S.gold+'</span>';
- if(home){hud='<button class="chip map'+(0?'':'')+'" data-act="tab:boss" aria-label="Weltkarte">'+UI('karte')+'<span>'+(S.rest?'Rast':Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY))+' T')+'</span></button><span class="grow"></span>'+gc+hero;
-  var act=S.bosses.filter(function(b){return !b.done;}).sort(function(a,b){return a.date<b.date?-1:1;})[0],dl=act?Math.ceil((OK.dateEnd(act.date)-now())/DAY):0;
-  var dn=Math.max(0,Math.ceil((OK.raidDue(S)-now())/DAY));
-  fl='';
-  sh=sheetStart(RI);}
- else if(inRoom){hud=back+'<span class="chip">'+cur.n+'<span class="pill">'+upLvl(ui.room)+'/8</span></span>';
-  if(ui.edit&&KIT[ui.room])sh='<div class="card"><div class="t">Einrichten</div><div class="s">Ziehe Möbel entlang des Bodens. Wandschmuck verschiebst du frei an der Wand. Tippe ein Stück aus dem Lager an, um es zurückzulegen.</div>'+
-   '<div class="row"><button class="b grow" data-act="edit:reset">'+(ui.confirm==='edit:reset'?'Wirklich?':'Grundform')+'</button><button class="b pri grow" data-act="edit:off">Fertig</button></div></div>'+vLager(ui.room);
-  else sh='<div class="s"><span class="'+cur.c+'" style="font-weight:650">'+cur.s+'.</span> '+cur.d+'</div>'+(vRout()[ui.room]||'')+
-   (KIT[ui.room]?'<div class="card"><div class="row">'+UI('truhe')+'<div class="grow"><div class="t">Einrichten</div><div class="s">Möbel und Wandschmuck selbst platzieren.</div></div><button class="b" data-act="edit:on">Einrichten</button></div></div>':'');}
- else{hud=back+'<span class="chip">'+(ui.tab==='boss'?'Weltkarte':'Held')+'</span>';sh=ui.tab==='boss'?vMap():vHeld();}
- var cl=charLvl();if(cl>S.lvlSeen){var nw=[];['burg','thron','hof'].forEach(function(r){var n=upNext(r);if(n&&!n.sk&&n.req<=cl&&n.req>S.lvlSeen)nw.push(n.n+' ('+n.p+' Gold)');});
-  sh='<div class="card lvl">'+UI('held')+'<div class="t big">Stufe '+cl+' erreicht!</div><div class="s">Dein Ruhm wächst. Die Horde wird stärker, aber deine Burg auch.</div>'+(nw.length?'<div class="s">Jetzt baubar: '+nw.join(', ')+'</div>':'')+'<button class="b pri" data-act="lvlok">Weiter</button></div>'+sh;}
- document.getElementById('hud').innerHTML=hud;document.getElementById('float').innerHTML=fl;
- var se=document.getElementById('sheet');se.innerHTML=sh;se.className=home?'':(inRoom||ui.tab==='boss')?'room':'full';
- testIds();fitCv();draw();drawPv();}
 /* data-testid für Tests: aus data-act (z. B. room:turm wird act-room-turm), Eingabefelder aus data-in oder id. */
 function testIds(){var a=document.querySelectorAll('#app [data-act]:not([data-testid])'),i,e;for(i=0;i<a.length;i++)a[i].setAttribute('data-testid','act-'+a[i].getAttribute('data-act').replace(/[^a-zA-Z0-9]+/g,'-'));
  a=document.querySelectorAll('#app input:not([data-testid]),#app select:not([data-testid]),#app textarea:not([data-testid])');for(i=0;i<a.length;i++){e=a[i];var k=e.getAttribute('data-in')||e.id||(e.hasAttribute('data-name')?'name':e.hasAttribute('data-goal')?'goal':e.getAttribute('data-boss')?'boss-'+e.getAttribute('data-boss'):'');if(k)e.setAttribute('data-testid','in-'+k);}
@@ -1220,7 +1311,7 @@ function init(){
   else if(el.hasAttribute('data-goal')){n=parseFloat(el.value);if(n>0){S.runGoal=n;save();toast('Monatsziel angepasst');}}
   else if(el.getAttribute('data-boss')){n=parseFloat(el.value);if(n>0){S.bosses.forEach(function(b){if(b.id===el.getAttribute('data-boss'))b.target=n;});save();render();toast('Zielwert angepasst');}}});
  kBind();for(var rk in ROOMS2)ROOMS2[rk].f().forEach(wImg);for(var ik in ITEMS)wImg(itemIcon(ik));['held_s_tunika','held_s_leder','held_s_kette','held_s_platte','held_s_gold'].forEach(wImg);['magd','bauer','schmied','haendlerin','kind','moench'].forEach(function(n){wImg('bew_'+n);});raids();render();
- setInterval(function(){tick++;draw();if(ui.tab==='held')drawPv();},120);window.addEventListener('resize',function(){fitCv();draw();});
+ setInterval(function(){tick++;draw();if(ui.tab==='held')drawPv();},120);window.addEventListener('resize',function(){fitCv();draw();placeMap();});
  setInterval(function(){var before=S.raids.length;raids();if(S.raids.length!==before)render();},60000);
  if(DEBUG){var ds=document.createElement('script');ds.src='debug.js?v=1';document.body.appendChild(ds);}else initSync();
 }

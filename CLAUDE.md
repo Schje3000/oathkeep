@@ -152,6 +152,15 @@ Der Held soll sichtbar verfallen: kräftig mit erhobenem Schwert, müde mit gese
 - **Weltkarte:** Pergamentkarte mit Burg, Hordenlager und je einer Festung pro Eroberung. Zwei Reiter: «Ansturm» (Bereitschaft mit Aufschlüsselung) und «Eroberungen».
 - **Held:** Vorschau mit Live-Anpassung, Verlauf, Rast am Lagerfeuer, Fertigkeiten, Monatsziel, Sicherung.
 
+**Stand nach dem Umbau (Mockup «Alle Bildschirme»):**
+
+- **Kopfleiste:** Start mit Logo, Gold und Stufe. In Räumen runder Zurück-Knopf (Pfeil), Raumname mit Stufe und Hammer (antippen öffnet den Ausbau, `ui.bau`) und Gold. Weltkarte und Held mit Zurück-Knopf, beim Helden ein rundes Zahnrad für Einstellungen.
+- **Zustandsleiste** unter der Kopfleiste (`#float`, `stBar`, `roomStat`, `mapStat`, `heroStat`): Symbol, Zustand gross, Einzelheit klein.
+- **Start:** runder Weltkarten-Knopf mit Tagen bis zum Ansturm auf einem Holzschild über der Leiste (`placeMap`). In der Leiste zuerst die Raumkacheln, dann Mauerschaden und Burgausbau.
+- **Räume:** Hauptkarte mit Wochen- oder Monatsziel und Knopf «Eintragen» (heute schon erledigt: gesperrt mit Häkchen), darunter «Zuletzt» mit Rücknahme. Ausbau nur noch über die Stufenanzeige, mit Voraussetzungen als Chips und Grund auf dem gesperrten Knopf (`vBau`). Innenraum nach Fälligkeit sortiert. Innenhof mit Prüfliste der Bewohner, dazu Händler und Ausrüster.
+- **Weltkarte:** Reiter Ansturm (Aufschlüsselung aufklappbar, `ui.mdet`) und Eroberungen (Formular hinter «Neue Eroberung», `ui.newb`).
+- **Held:** Reiter Held, Sammlung, Chronik (`ui.htab`), Einstellungen mit Rast, Monatsziel und Sicherung hinter dem Zahnrad.
+
 ### Gestaltung
 
 - Szenen: detaillierte Pixel-Art-Fantasy, sonniger Sommerwald, Burg aus Stein, ruhig und einladend, nicht düster. Referenzen: Ritter auf Waldlichtung mit Lichtstrahl, Reiter im Tannenwald, Burgturm mit Tor, überwachsene Ruinenhalle.
